@@ -627,25 +627,6 @@ class ConfigTest(unittest.TestCase):
             assert path in result
 
 
-class ConfigWriteTest(unittest.TestCase):
-
-    def test_write_config_file(self):
-        params = config.get_config_params(TEST_CONF_GAMMA)
-        temp_config = tempfile.mktemp(suffix='.conf')
-        config.write_config_file(params, temp_config)
-        self.assertTrue(os.path.exists(temp_config))
-        os.remove(temp_config)
-
-    def test_new_config_file_and_original_match(self):
-        params = config.get_config_params(TEST_CONF_GAMMA)
-        temp_config = tempfile.mktemp(suffix='.conf')
-        config.write_config_file(params, temp_config)
-        new_params = config.get_config_params(temp_config)
-        self.maxDiff = None
-        self.assertDictEqual(params, new_params)
-        os.remove(temp_config)
-
-
 class ConfigAPSParametersTest(unittest.TestCase):
     def setUp(self):
         self.conf_path = TEST_CONF_ROIPAC
