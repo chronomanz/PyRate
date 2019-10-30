@@ -30,7 +30,7 @@ from os.path import splitext, split
 import re
 import itertools
 import logging
-
+from osgeo import gdal
 from pyrate.core.ifgconstants import YEARS_PER_DAY
 from pyrate import CONV2TIF, PREPIFG, PROCESS, MERGE
 
@@ -214,74 +214,74 @@ TMPDIR = 'tmpdir'
 # format is	key : (conversion, default value)
 # None = no conversion
 PARAM_CONVERSION = {
-#    REPROJECTION : (int, 3), # Default no conversion, CONVERSION NOT IMPLEMENTED
-    IFG_CROP_OPT : (int, 1), # default to area 'intersection' option
-    IFG_LKSX : (int, NO_MULTILOOKING),
-    IFG_LKSY : (int, NO_MULTILOOKING),
-    IFG_XFIRST : (float, None),
-    IFG_XLAST : (float, None),
-    IFG_YFIRST : (float, None),
-    IFG_YLAST : (float, None),
-    NO_DATA_VALUE: (float, 0.0),
+        # REPROJECTION : (int, 3), # Default no conversion, CONVERSION NOT IMPLEMENTED
+        IFG_CROP_OPT : (int, 1),  # default to area 'intersection' option
+        IFG_LKSX : (int, NO_MULTILOOKING),
+        IFG_LKSY : (int, NO_MULTILOOKING),
+        IFG_XFIRST : (float, None),
+        IFG_XLAST : (float, None),
+        IFG_YFIRST : (float, None),
+        IFG_YLAST : (float, None),
+        NO_DATA_VALUE: (float, 0.0),
 
-    COH_MASK: (int, 0),
-    COH_THRESH: (float, 0.1),
+        COH_MASK: (int, 0),
+        COH_THRESH: (float, 0.1),
 
-    REFX: (float, -1),
-    REFY: (float, -1),
-    REFNX: (int, 10),
-    REFNY: (int, 10),
-    REF_CHIP_SIZE: (int, 21),
-    REF_MIN_FRAC: (float, 0.5),
-    REF_EST_METHOD: (int, 1),  # default to average of whole image
+        REFX: (float, -1),
+        REFY: (float, -1),
+        REFNX: (int, 10),
+        REFNY: (int, 10),
+        REF_CHIP_SIZE: (int, 21),
+        REF_MIN_FRAC: (float, 0.5),
+        REF_EST_METHOD: (int, 1),  # default to average of whole image
 
-    ORBITAL_FIT: (int, 0),
-    ORBITAL_FIT_METHOD: (int, NETWORK_METHOD),
-    ORBITAL_FIT_DEGREE: (int, PLANAR),
-    ORBITAL_FIT_LOOKS_X: (int, 10),
-    ORBITAL_FIT_LOOKS_Y: (int, 10),
+        ORBITAL_FIT: (int, 0),
+        ORBITAL_FIT_METHOD: (int, NETWORK_METHOD),
+        ORBITAL_FIT_DEGREE: (int, PLANAR),
+        ORBITAL_FIT_LOOKS_X: (int, 10),
+        ORBITAL_FIT_LOOKS_Y: (int, 10),
 
-    LR_NSIG: (int, 2),
-    # pixel thresh based on nepochs? not every project may have 20 epochs
-    LR_PTHRESH: (int, 3),
-    LR_MAXSIG: (int, 10),
+        LR_NSIG: (int, 2),
+        # pixel thresh based on nepochs? not every project may have 20 epochs
+        LR_PTHRESH: (int, 3),
+        LR_MAXSIG: (int, 10),
 
-    #ATM_FIT: (int, 0), NOT CURRENTLY USED
-    #ATM_FIT_METHOD: (int, 2),
+        # ATM_FIT: (int, 0), NOT CURRENTLY USED
+        # ATM_FIT_METHOD: (int, 2),
 
-    APSEST: (int, 0),
-    TLPF_METHOD: (int, 1),
-    TLPF_CUTOFF: (float, 1.0),
-    TLPF_PTHR: (int, 1),
+        APSEST: (int, 0),
+        TLPF_METHOD: (int, 1),
+        TLPF_CUTOFF: (float, 1.0),
+        TLPF_PTHR: (int, 1),
 
-    SLPF_METHOD: (int, 1),
-    SLPF_CUTOFF: (float, 1.0),
-    SLPF_ORDER: (int, 1),
-    SLPF_NANFILL: (int, 0),
+        SLPF_METHOD: (int, 1),
+        SLPF_CUTOFF: (float, 1.0),
+        SLPF_ORDER: (int, 1),
+        SLPF_NANFILL: (int, 0),
 
-    TIME_SERIES_CAL: (int, 0),
-    # pixel thresh based on nepochs? not every project may have 20 epochs
-    TIME_SERIES_PTHRESH: (int, 3),
-    TIME_SERIES_SM_FACTOR: (float, -1.0),
-    TIME_SERIES_SM_ORDER: (int, None),
-    TIME_SERIES_METHOD: (int, 2),  # Default to SVD method
+        TIME_SERIES_CAL: (int, 0),
+        # pixel thresh based on nepochs? not every project may have 20 epochs
+        TIME_SERIES_PTHRESH: (int, 3),
+        TIME_SERIES_SM_FACTOR: (float, -1.0),
+        TIME_SERIES_SM_ORDER: (int, None),
+        TIME_SERIES_METHOD: (int, 2),  # Default to SVD method
 
-    PARALLEL: (int, 0),
-    PROCESSES: (int, 8),
-    PROCESSOR: (int, None),
-    NAN_CONVERSION: (int, 0),
-    NO_DATA_AVERAGING_THRESHOLD: (float, 0.0),
+        PARALLEL: (int, 0),
+        PROCESSES: (int, 8),
+        PROCESSOR: (int, None),
+        NAN_CONVERSION: (int, 0),
+        NO_DATA_AVERAGING_THRESHOLD: (float, 0.0),
     }
 
-PATHS = [OBS_DIR, IFG_FILE_LIST, DEM_FILE,
-         DEM_HEADER_FILE, OUT_DIR,
-         SLC_DIR, SLC_FILE_LIST, COH_FILE_DIR, COH_FILE_LIST,
-         APS_INCIDENCE_MAP,
-         APS_ELEVATION_MAP]
+PATHS = [
+        OBS_DIR, IFG_FILE_LIST, DEM_FILE, DEM_HEADER_FILE, OUT_DIR, SLC_DIR, SLC_FILE_LIST, COH_FILE_DIR, COH_FILE_LIST,
+        APS_INCIDENCE_MAP, APS_ELEVATION_MAP
+    ]
 
 DEFAULT_TO_OBS_DIR = [SLC_DIR, COH_FILE_DIR]
 
 INT_KEYS = [APS_CORRECTION, APS_METHOD]
+
 
 def get_config_params(path: str, validate: bool=True, step: str=CONV2TIF) -> Dict:
     """
@@ -309,6 +309,7 @@ def get_config_params(path: str, validate: bool=True, step: str=CONV2TIF) -> Dic
     params[TMPDIR] = os.path.join(os.path.abspath(params[OUT_DIR]), 'tmpdir')
 
     return params
+
 
 def _parse_conf_file(content, validate: bool=True, step: str=CONV2TIF) -> Dict:
     """
@@ -354,16 +355,14 @@ def _handle_extra_parameters(params):
     params[APS_ELEVATION_EXT] = None
 
     if params[APS_INCIDENCE_MAP] is not None:
-        params[APS_INCIDENCE_EXT] = \
-            os.path.basename(params[APS_INCIDENCE_MAP]).split('.')[-1]
+        params[APS_INCIDENCE_EXT] = os.path.basename(params[APS_INCIDENCE_MAP]).split('.')[-1]
         params[APS_ELEVATION_MAP] = None
         params[APS_ELEVATION_EXT] = None
         return params
 
     # define APS_ELEVATON_EXT for gamma prepifg
     if params[APS_ELEVATION_MAP] is not None:
-        params[APS_ELEVATION_EXT] = os.path.basename(
-            params[APS_ELEVATION_MAP]).split('.')[-1]
+        params[APS_ELEVATION_EXT] = os.path.basename(params[APS_ELEVATION_MAP]).split('.')[-1]
 
     return params
 
@@ -389,8 +388,7 @@ def _parse_pars(pars, validate: bool=True, step: str=CONV2TIF) -> Dict:
                 try:
                     pars[k] = conversion_func(pars[k])
                 except ValueError as e:
-                    _logger.error(f"Unable to convert '{k}': {pars[k]} to "
-                                  f"expected type {conversion_func.__name__}.")
+                    _logger.error(f"Unable to convert '{k}': {pars[k]} to "f"expected type {conversion_func.__name__}.")
                     raise e
 
     # Fallback to default for missing paths.
@@ -401,6 +399,7 @@ def _parse_pars(pars, validate: bool=True, step: str=CONV2TIF) -> Dict:
     if validate:
         validate_parameters(pars, step)
     return pars
+
 
 # CONFIG UTILS - TO BE MOVED?
 def parse_namelist(nml):
@@ -416,22 +415,6 @@ def parse_namelist(nml):
         lines = [line.rstrip() for line in f_in]
     return filter(None, lines)
 
-def write_config_file(params, output_conf_file):
-    """
-    Takes a param object and writes the config file. Reverse of get_conf_params.
-
-    :param dict params: parameter dictionary
-    :param str output_conf_file: output file name
-
-    :return: config file
-    :rtype: list
-    """
-    with open(output_conf_file, 'w') as f:
-        for k, v in params.items():
-            if v is not None:
-                f.write(''.join([k, ':\t', str(v), '\n']))
-            else:
-                f.write(''.join([k, ':\t', '', '\n']))
 
 def transform_params(params):
     """
@@ -442,10 +425,10 @@ def transform_params(params):
     :return: xlooks, ylooks, crop
     :rtype: int
     """
-
     t_params = [IFG_LKSX, IFG_LKSY, IFG_CROP_OPT]
     xlooks, ylooks, crop = [params[k] for k in t_params]
     return xlooks, ylooks, crop
+
 
 def original_ifg_paths(ifglist_path, obs_dir):
     """
@@ -461,7 +444,8 @@ def original_ifg_paths(ifglist_path, obs_dir):
     ifglist = parse_namelist(ifglist_path)
     return [os.path.join(obs_dir, p) for p in ifglist]
 
-def coherence_paths_for(path, params, tif=False) -> str:
+
+def coherence_paths_for(path, params, tif=False) -> list:
     """
     Returns path to coherence file for given interferogram. Pattern matches
     based on epoch in filename.
@@ -491,6 +475,7 @@ def coherence_paths_for(path, params, tif=False) -> str:
 
     return [os.path.join(coherence_dir, m) for m in matches]
 
+
 def coherence_paths(params) -> List[str]:
     """
     Returns paths to corresponding coherence files for given IFGs. Assumes
@@ -508,6 +493,7 @@ def coherence_paths(params) -> List[str]:
     paths = [coherence_paths_for(ifg, params) for ifg in ifgs]
     return list(itertools.chain.from_iterable(paths))
 
+
 def mlooked_path(path, looks, crop_out):
     """
     Adds suffix to ifg path, for creating a new path for multilooked files.
@@ -520,8 +506,8 @@ def mlooked_path(path, looks, crop_out):
     :rtype: str
     """
     base, ext = splitext(path)
-    return "{base}_{looks}rlks_{crop_out}cr{ext}".format(
-        base=base, looks=looks, crop_out=crop_out, ext=ext)
+    return "{base}_{looks}rlks_{crop_out}cr{ext}".format(base=base, looks=looks, crop_out=crop_out, ext=ext)
+
 
 def get_dest_paths(base_paths, crop, params, looks):
     """
@@ -536,12 +522,15 @@ def get_dest_paths(base_paths, crop, params, looks):
     :rtype: list
     """
 
-    dest_mlooked_ifgs = [mlooked_path(os.path.basename(q).split('.')[0] + '_'
-                                      + os.path.basename(q).split('.')[1] +
-                                      '.tif', looks=looks, crop_out=crop)
-                         for q in base_paths]
+    dest_mlooked_ifgs = []
+
+    for q in base_paths:
+        tiff_file_name = os.path.basename(q).split('.')[0] + "_" + os.path.basename(q).split('.')[1] + ".tif"
+        new_tiff_file_name = mlooked_path(tiff_file_name, looks=looks, crop_out=crop)
+        dest_mlooked_ifgs.append(new_tiff_file_name)
 
     return [os.path.join(params[OUT_DIR], p) for p in dest_mlooked_ifgs]
+
 
 def get_ifg_paths(config_file, step=CONV2TIF):
     """
@@ -578,8 +567,8 @@ def get_ifg_paths(config_file, step=CONV2TIF):
 
     return base_unw_paths, dest_paths, params
 
-# ==== PARAMETER VALIDATION ==== #
 
+# ==== PARAMETER VALIDATION ==== #
 _PARAM_VALIDATION = {
     OBS_DIR: (
         lambda a: a is not None and os.path.exists(a),
@@ -828,6 +817,7 @@ _REFERENCE_PIXEL_VALIDATION = {
 }
 """dict: basic validation functions for reference pixel search parameters."""
 
+
 def convert_geographic_coordinate_to_pixel_value(refpx, refpy, transform):
     """
     Converts a lat/long coordinate to a pixel coordinate given the 
@@ -853,7 +843,7 @@ def convert_geographic_coordinate_to_pixel_value(refpx, refpy, transform):
 
     return int(refpx), int(refpy)
 
-from osgeo import gdal
+
 def validate_parameters(pars: Dict, step: str=CONV2TIF):
     """
     Main validation function. Calls validation subfunctions and gathers
@@ -985,7 +975,7 @@ def validate_parameters(pars: Dict, step: str=CONV2TIF):
         if pars[REFX] != -1 and pars[REFY] != -1:
 
             # Convert refx/refy from lat/long to pixel and validate...
-            if pars[REFX] <= 180 and pars[REFX] >= -180 and pars[REFY] >= -90 and pars[REFY] <= 90:
+            if 180 >= pars[REFX] >= -180 and -90 <= pars[REFY] <= 90:
 
                 pars[REFX], pars[REFY] = convert_geographic_coordinate_to_pixel_value(pars[REFX], pars[REFY], transform)
                 _logger.debug("converted pars[REFX], pars[REFY] to: "+str(pars[REFX])+" "+str(pars[REFY]))
@@ -1005,9 +995,7 @@ def validate_parameters(pars: Dict, step: str=CONV2TIF):
                 # TODO fix tests when below validation is included
                 # validate_reference_pixel_search_windows(n_cols, n_rows, pars)
 
-        validate_multilook_parameters(n_cols, n_rows, 
-                                      ORBITAL_FIT_LOOKS_X, ORBITAL_FIT_LOOKS_Y, 
-                                      pars)
+        validate_multilook_parameters(n_cols, n_rows, ORBITAL_FIT_LOOKS_X, ORBITAL_FIT_LOOKS_Y, pars)
         validate_slpf_cutoff(extents, pars)
         validate_epoch_thresholds(n_epochs, pars)
         validate_epoch_cutoff(max_span, TLPF_CUTOFF, pars)
@@ -1015,6 +1003,7 @@ def validate_parameters(pars: Dict, step: str=CONV2TIF):
 
     elif step == MERGE:
         validate_prepifg_tifs_exist(ifl, pars[OBS_DIR], pars)
+
 
 def _raise_errors(errors: List[str]):
     """
@@ -1024,6 +1013,7 @@ def _raise_errors(errors: List[str]):
         errors.insert(0, "invalid parameters")
         raise ConfigException('\n'.join(errors))
     return True
+
 
 def validate_compulsory_parameters(pars: Dict) -> Optional[bool]:
     """
@@ -1049,16 +1039,14 @@ def validate_compulsory_parameters(pars: Dict) -> Optional[bool]:
 
     return _raise_errors(errors)
 
+
 def validate_optional_parameters(pars: Dict):
     """
     Calls the validators for optional parameters.
-
     Args:
         pars: The parameters dictionary.
-
     Returns:
         True if validation successful.
-
     Raises:
         ConfigException: If validation fails.
     """
@@ -1093,6 +1081,7 @@ def validate_optional_parameters(pars: Dict):
 
     return _raise_errors(errors)
 
+
 def validate_minimum_epochs(n_epochs: int, min_epochs: int) -> Optional[bool]:
     """
     Validates the minimum number of epochs required for PyRate to produce
@@ -1115,15 +1104,14 @@ def validate_minimum_epochs(n_epochs: int, min_epochs: int) -> Optional[bool]:
                       f" {min_epochs} or more unique epochs are required by PyRate.")
     _raise_errors(errors)
 
+
 def validate_epochs(file_list: str, pattern: str) -> Optional[bool]:
     """
     Validate that user provided file names contain the correct pattern of
     epochs.
-
     Args:
         file_list: Path to the list of files to validate.
         pattern: Regex string for finding the epoch(s).
-
     Returns:
         True if all names in file list contain the epoch pattern *once*.
 
@@ -1137,8 +1125,7 @@ def validate_epochs(file_list: str, pattern: str) -> Optional[bool]:
     for fn in filenames:
         epochs = PTN.findall(fn)
         if not epochs:
-            errors.append(f"'{file_list}': {fn} does not contain an epoch of "
-                          f"format {pattern}.")
+            errors.append(f"'{file_list}': {fn} does not contain an epoch of "f"format {pattern}.")
         if len(epochs) > 1:
             errors.append(f"'{file_list}': {fn} does contains more than "
                           f"one epoch of {pattern}. There must be only one "
@@ -1146,40 +1133,35 @@ def validate_epochs(file_list: str, pattern: str) -> Optional[bool]:
 
     return _raise_errors(errors)
 
+
 def validate_epoch_cutoff(max_span: float, cutoff: str, pars: Dict) -> Optional[bool]:
     """
     Validate cutoff parameters that rely on the data timespan.
-
     Args:
         max_span: The maximum temporal span of the provided data in years.
         cutoff: The key of the cutoff parameter.
         pars: The parameters dictionary.
-
     Returns:
         True if the cutoff is less than the maximum data timespan.
-
     Raises:
         ConfigException: If the cutoff is greater than the max data timespan.
     """
     errors = []
     if pars[cutoff] > max_span:
-        errors.append("'{cutoff}': must be less than max time span of "
-                      "data in years ({max_span}).")
+        errors.append("'{cutoff}': must be less than max time span of data in years ({max_span}).")
     return _raise_errors(errors)
+
 
 def validate_prepifg_tifs_exist(ifg_file_list: str, obs_dir: str, pars: Dict) -> Optional[bool]:
     """
     Validates that cropped and multilooked interferograms exist in geotiff
     format.
-
     Args:
         ifg_file_list: Path to file containing interfergram file names.
         obs_dir: Path to observations directory.
         pars: Parameters dictionary.
-
     Returns:
         True if all interferograms exist in geotiff format.
-
     Raises:
         ConfigException: If not all intergerograms exist in geotiff format.
     """
@@ -1201,17 +1183,15 @@ def validate_prepifg_tifs_exist(ifg_file_list: str, obs_dir: str, pars: Dict) ->
 
     return _raise_errors(errors)
 
+
 def validate_tifs_exist(ifg_file_list: str, obs_dir: str) -> Optional[bool]:
     """
     Validates that provided interferograms exist in geotiff format.
-
     Args:
         ifg_file_list: Path to file containing interfergram file names.
         obs_dir: Path to observations directory.
-
     Returns:
         True if all interferograms exist in geotiff format.
-
     Raises:
         ConfigException: If not all intergerograms exist in geotiff format.
     """
@@ -1230,17 +1210,15 @@ def validate_tifs_exist(ifg_file_list: str, obs_dir: str) -> Optional[bool]:
 
     return _raise_errors(errors)
 
+
 def validate_ifgs(ifg_file_list: str, obs_dir: str) -> Optional[bool]:
     """
     Validates that provided interferograms exist.
-
     Args:
         ifg_file_list: Path to file containing interferogram file names.
         obs_dir: Path to observations directory.
-
     Returns:
         True if all interferograms exist.
-
     Raises:
         ConfigException: If not all interferograms exist.
     """
@@ -1253,6 +1231,7 @@ def validate_ifgs(ifg_file_list: str, obs_dir: str) -> Optional[bool]:
             errors.append(f"'{IFG_FILE_LIST}': interferogram '{fname}' does not exist.")
 
     return _raise_errors(errors)
+
 
 def validate_obs_thresholds(ifg_file_list: str, pars: Dict) -> Optional[bool]:
     """
@@ -1308,20 +1287,17 @@ def validate_epoch_thresholds(n_epochs: int, pars: Dict) -> Optional[bool]:
 
     return _raise_errors(errors)
 
-def validate_crop_parameters(min_extents: Tuple[float, float, float, float],
-                             pars: Dict) -> Optional[bool]:
+
+def validate_crop_parameters(min_extents: Tuple[float, float, float, float], pars: Dict) -> Optional[bool]:
     """
     Validates IFG crop parameters by ensuring user provided crop coordinates
     are within the *minimum* (intersecting) bounds of the interferogram stack.
-    
     Args:
         min_extents: The minimum extents of the interferogram stack. The
             crop coordinates must be within these extents.
         pars: Parameters dictionary.
-
     Returns:
         True if validation is successful.
-
     Raises:
         ConfigException: If validation fails.
     """
@@ -1335,7 +1311,6 @@ def validate_crop_parameters(min_extents: Tuple[float, float, float, float],
         if not dim_min < pars[var_name] < dim_max:
             return [f"'{var_name}': crop coordinate ({pars[var_name]}) "
                     f"is outside bounds of scene {dim_string}."]
-
         return []
     
     errors.extend(_validate_crop_coord(IFG_XFIRST, min_xmin, min_xmax, x_dim_string))
@@ -1346,20 +1321,16 @@ def validate_crop_parameters(min_extents: Tuple[float, float, float, float],
     return _raise_errors(errors)
 
 
-def validate_slpf_cutoff(extents: Tuple[float, float, float, float], 
-                               pars: Dict) -> Optional[bool]:
+def validate_slpf_cutoff(extents: Tuple[float, float, float, float], pars: Dict) -> Optional[bool]:
     """
     Validate SLPF_CUTOFF is within the bounds of the scene being processed
     (after prepifg cropping/subsampling has occurred).
-
     Args:
         extents : Tuple of (xmin, xmax, ymin, ymax) describing the extents
             of the scene, after cropping & multisampling, in degrees.
         pars: Parameters dictionary.
-
     Returns:
         True if validation is successful.
-
     Raises:
         ConfigException: If validation fails.
     """
@@ -1380,21 +1351,16 @@ def validate_slpf_cutoff(extents: Tuple[float, float, float, float],
     return _raise_errors(errors)
 
 
-
-def validate_multilook_parameters(cols: int, rows: int, 
-                                 xlks_name: str, ylks_name: str, 
-                                 pars: Dict) -> Optional[bool]:
+def validate_multilook_parameters(cols: int, rows: int, xlks_name: str, ylks_name: str, pars: Dict) -> Optional[bool]:
     """
     Validate multilook parameters by ensuring resulting resolution will be
     at least 1 pixel and less than the current resolution.
-
     Args:
         cols: Number of pixel columns (X) in the scene.
         rows: Number of pixel rows (Y) in the scene.
         xlks_name: Key for looking up the X looks factor.
         ylks_name: Key for looking up the Y looks factor.
         pars: Parameters dictionary.
-
     Returns:
         True if validation is successful.
 
@@ -1414,19 +1380,15 @@ def validate_multilook_parameters(cols: int, rows: int,
     errors.extend(_validate_mlook(ylks_name, rows, 'y'))
     return _raise_errors(errors)
 
-def validate_reference_pixel_search_windows(n_cols: int, n_rows: int,
-                                            pars: Dict) -> Optional[bool]:
+def validate_reference_pixel_search_windows(n_cols: int, n_rows: int,pars: Dict) -> Optional[bool]:
     """
     Validates that the reference pixel search windows provided by user
     fit within the scene being processed.
-
     Args:
         n_cols: Number of pixel columns (X) in the scene.
         n_rows: Number of pixel rows (Y) in the scene.
-
     Returns:
         True if the scene can accomodate the search windows (no overlap).
-
     Raises:
         ConfigException: If the scene cannot accomodate the search windows.
     """
@@ -1452,21 +1414,17 @@ def validate_reference_pixel_search_windows(n_cols: int, n_rows: int,
 
     return _raise_errors(errors)
 
-def validate_gamma_headers(ifg_file_list: str, slc_file_list: str,
-                           slc_dir: str) -> Optional[bool]:
+def validate_gamma_headers(ifg_file_list: str, slc_file_list: str, slc_dir: str) -> Optional[bool]:
     """
     Validates that a pair of GAMMA headers exist for each provided
     GAMMA interferogram.
-
     Args:
         ifg_file_list: Path to the file listing filenames of interferograms.
         slc_file_list: Path to the file listing filenames of GAMMA headers.
         slc_dir: Path to directory containing GAMMA headers.
-
     Returns:
         True if there are exactly 2 headers for each interogram (one for
         each epoch).
-
     Raises:
         ConfigException: If there are 0 or more than 2 matching headers
             for an interferogram.
@@ -1477,8 +1435,7 @@ def validate_gamma_headers(ifg_file_list: str, slc_file_list: str,
     for ifg in parse_namelist(ifg_file_list):
         headers = get_header_paths(ifg, slc_file_list, slc_dir)
         if len(headers) < 2:
-            errors.append(f"'{SLC_DIR}': Headers not found for interferogram "
-                          "'{ifg}'.")
+            errors.append(f"'{SLC_DIR}': Headers not found for interferogram '{ifg}'.")
 
     return _raise_errors(errors)
 
@@ -1486,14 +1443,11 @@ def validate_coherence_files(ifg_file_list: str, pars: Dict) -> Optional[bool]:
     """
     Validates that there is a matching coherence file for each provided
     interferogram.
-
     Args:
         ifg_file_list: Path to file listing interferogram names.
         pars: The parameters dictionary.
-
     Returns:
         True if there is exactly 1 coherence file for each interferogram.
-
     Raises:
         ConfigException: If there are 0 or more than 1 matching coherence
             files for an interferogram.
@@ -1509,8 +1463,8 @@ def validate_coherence_files(ifg_file_list: str, pars: Dict) -> Optional[bool]:
             errors.append(f"'{COH_FILE_DIR}': found more than one coherence "
                           f"file for '{ifg}'. There must be only one "
                           f"coherence file per interferogram. Found {paths}.")
-
     return _raise_errors(errors)
+
 
 def _get_temporal_info(ifg_file_list: str, obs_dir: str) -> Tuple:
     """
@@ -1527,8 +1481,7 @@ def _get_temporal_info(ifg_file_list: str, obs_dir: str) -> Tuple:
     from pyrate.core.algorithm import get_epochs
     from pyrate.core.shared import Ifg, output_tiff_filename
 
-    ifg_paths = \
-        [os.path.join(obs_dir, ifg) for ifg in parse_namelist(ifg_file_list)]
+    ifg_paths = [os.path.join(obs_dir, ifg) for ifg in parse_namelist(ifg_file_list)]
     rasters = [Ifg(output_tiff_filename(f, obs_dir)) for f in ifg_paths]
 
     for r in rasters:
@@ -1546,15 +1499,14 @@ def _get_temporal_info(ifg_file_list: str, obs_dir: str) -> Tuple:
 
     return n_epochs, max_span
 
+
 def _get_prepifg_info(ifg_file_list: str, obs_dir: str, pars: Dict) -> Tuple:
     """
     Retrives spatial information from prepifg interferograms (images that
     have been cropped and multilooked).
-
     Args:
         ifg_file_list: Path to file containing list of interferogram file names.
         obs_dir: Path to observations directory.
-
     Returns:
     """
     from pyrate.core.shared import Ifg
@@ -1580,15 +1532,14 @@ def _get_prepifg_info(ifg_file_list: str, obs_dir: str, pars: Dict) -> Tuple:
 
     return extents, n_cols, n_rows, transform
 
+
 def _get_fullres_info(ifg_file_list: str, obs_dir: str, crop_opts: Tuple) -> Tuple:
     """
     Retrieves spatial information from the provided interferograms.
     Requires the interferograms to exist in geotiff format.
-
     Args:
         ifg_file_list: Path to file containing list of interferogram file names.
         obs_dir: Path to observations directory.
-
     Returns:
         Tuple containing extents (xmin, ymin, xmax, ymax), number of pixel
         columns, number of pixel rows, number of unique epochs and maximum
@@ -1622,6 +1573,7 @@ def _get_fullres_info(ifg_file_list: str, obs_dir: str, crop_opts: Tuple) -> Tup
 
     return min_extents, n_cols, n_rows
 
+
 def _crop_opts(params: Dict) -> Tuple:
     """
     Convenience function for getting crop options from parameters.
@@ -1637,6 +1589,7 @@ def _crop_opts(params: Dict) -> Tuple:
         return crop_opt, CustomExts(xfirst, yfirst, xlast, ylast)
 
     return crop_opt, None
+
 
 class ConfigException(Exception):
     """
