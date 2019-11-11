@@ -1174,7 +1174,7 @@ def validate_prepifg_tifs_exist(ifg_file_list: str, obs_dir: str, pars: Dict) ->
 
     for path in ifg_paths:
         if not os.path.exists(path):
-            fname = os.path.split(path)[1]
+            errors.append(f"Interferogram: '{path}'  is "
             errors.append(f"'{IFG_FILE_LIST}': interferogram '{fname}' is "
                           f"required as a cropped and subsampled geotiff but "
                           f"could not be found. Make sure 'prepifg' has been "
