@@ -33,6 +33,7 @@ import logging
 from osgeo import gdal
 from pyrate.core.ifgconstants import YEARS_PER_DAY
 from pyrate import CONV2TIF, PREPIFG, PROCESS, MERGE
+from pyrate.configuration import Configuration
 
 _logger = logging.getLogger(__name__)
 
@@ -431,21 +432,6 @@ def transform_params(params):
     return xlooks, ylooks, crop
 
 
-def original_ifg_paths(ifglist_path, obs_dir):
-    """
-    Returns sequence of paths to files in given ifglist file.
-
-    Args:
-        ifglist_path: Absolute path to interferogram file list.
-        obs_dir: Absolute path to observations directory.
-
-    Returns:
-        list: List of full paths to interferogram files.
-    """
-    ifglist = parse_namelist(ifglist_path)
-    return [os.path.join(obs_dir, p) for p in ifglist]
-
-
 def coherence_paths_for(path, params, tif=False) -> list:
     """
     Returns path to coherence file for given interferogram. Pattern matches
@@ -547,13 +533,15 @@ def get_ifg_paths(config_file, step=CONV2TIF):
     :rtype: list
     :rtype: dict
     """
+
     params = get_config_params(config_file, step=step)
     ifg_file_list = params.get(IFG_FILE_LIST)
 
     xlks, _, crop = transform_params(params)
 
-    # base_unw_paths need to be geotiffed by conv2tif and multilooked by prepifg
-    base_unw_paths = original_ifg_paths(ifg_file_list, params[OBS_DIR])
+    config_file = params["config_file_path"]
+    configration_settings = Configuration(config_file)
+    base_unw_paths = configration_settings.base_interferogram_paths
 
     # dest_paths are tifs that have been coherence masked (if enabled),
     #  cropped and multilooked
@@ -562,7 +550,7 @@ def get_ifg_paths(config_file, step=CONV2TIF):
 
         dest_paths = get_dest_paths(base_unw_paths, crop, params, xlks)
         for i, dest_path in enumerate(dest_paths):
-            dest_paths[i] = dest_path.replace("_tif","")
+            dest_paths[i] = dest_path.replace("_tif", "")
     else:
         dest_paths = get_dest_paths(base_unw_paths, crop, params, xlks)
 
