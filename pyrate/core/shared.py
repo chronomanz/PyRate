@@ -34,6 +34,7 @@ import pyproj
 import pkg_resources
 
 from pyrate.core import ifgconstants as ifc, mpiops, config as cf
+from pyrate.core.config import parse_namelist
 
 VERBOSE = True
 log = logging.getLogger(__name__)
@@ -1279,3 +1280,18 @@ class CorrectionStatusError(Exception):
     """
     Generic class for correction status errors.
     """
+
+
+def original_ifg_paths(ifglist_path, obs_dir):
+    """
+    Returns sequence of paths to files in given ifglist file.
+
+    Args:
+        ifglist_path: Absolute path to interferogram file list.
+        obs_dir: Absolute path to observations directory.
+
+    Returns:
+        list: List of full paths to interferogram files.
+    """
+    ifglist = parse_namelist(ifglist_path)
+    return [os.path.join(obs_dir, p) for p in ifglist]

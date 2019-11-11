@@ -28,6 +28,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 import pyrate.core.orbital
+import pyrate.core.shared
 import tests.common as common
 from pyrate.core import ref_phs_est as rpe, config as cf, mst, covariance
 from pyrate import process, prepifg, conv2tif
@@ -121,8 +122,8 @@ class LegacyTimeSeriesEquality(unittest.TestCase):
 
         xlks, ylks, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
 
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
         # start run_pyrate copy
@@ -238,8 +239,8 @@ class LegacyTimeSeriesEqualityMethod2Interp0(unittest.TestCase):
 
         xlks, ylks, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
 
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
         # start run_pyrate copy

@@ -27,6 +27,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 import pyrate.core.orbital
+import pyrate.core.shared
 import tests.common
 from pyrate.core import shared, ref_phs_est as rpe, config as cf, covariance as vcm_module
 from pyrate.core.linrate import linear_rate
@@ -92,7 +93,7 @@ class LegacyEqualityTest(unittest.TestCase):
 
         xlks, _, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(
             params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
         
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)

@@ -25,6 +25,7 @@ from numpy import array
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+import pyrate.core.shared
 from pyrate.core import shared, ref_phs_est as rpe, ifgconstants as ifc, config as cf
 from pyrate import process, prepifg, conv2tif
 from pyrate.core.covariance import cvd, get_vcmt, RDist
@@ -190,8 +191,8 @@ class LegacyEqualityTest(unittest.TestCase):
         prepifg.main(params)
         cls.params = params
         xlks, ylks, crop = cf.transform_params(params)
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
         refx, refy = process._ref_pixel_calc(dest_paths, params)

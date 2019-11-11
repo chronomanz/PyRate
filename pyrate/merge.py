@@ -27,6 +27,8 @@ import subprocess
 
 from pyrate.core import shared, ifgconstants as ifc, mpiops, config as cf
 from pyrate.core.shared import PrereadIfg
+from pyrate.configuration import Configuration
+
 gdal.SetCacheMax(64)
 log = logging.getLogger(__name__)
 
@@ -88,6 +90,7 @@ def create_png_from_tif(output_folder_path):
         for line in f.readlines():
             color_map_list.append(line.strip().split(" "))
 
+
     no_of_data_value = len(np.arange(minimum, maximum, step))
     for i, no in enumerate(np.arange(minimum, maximum, step)):
         color_map_list[i+1][0] = str(no)
@@ -100,7 +103,6 @@ def create_png_from_tif(output_folder_path):
     input_tif_path = os.path.join(output_folder_path, "linrate.tif")
     output_png_path = os.path.join(output_folder_path, "linrate.png")
     subprocess.check_call(["gdaldem", "color-relief", "-of", "PNG", input_tif_path, "-alpha", color_map_path, output_png_path, "-nearest_color_entry"])
-
 
 def main(params, rows, cols):
     """
@@ -125,7 +127,11 @@ def _merge_linrate(rows, cols, params):
     # pylint: disable=expression-not-assigned
     # setup paths
     xlks, _, crop = cf.transform_params(params)
-    base_unw_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
+
+    config_file = params["config_file_path"]
+    configration_settings = Configuration(config_file)
+    base_unw_paths = configration_settings.base_interferogram_paths
+
 
     if "tif" in base_unw_paths[0].split(".")[1]:
         dest_tifs = cf.get_dest_paths(base_unw_paths, crop, params, xlks)
@@ -185,7 +191,10 @@ def _merge_timeseries(rows, cols, params):
     """
     # pylint: disable=too-many-locals
     xlks, _, crop = cf.transform_params(params)
-    base_unw_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
+
+    config_file = params["config_file_path"]
+    configration_settings = Configuration(config_file)
+    base_unw_paths = configration_settings.base_interferogram_paths
 
     if "tif" in base_unw_paths[0].split(".")[1]:
         dest_tifs = cf.get_dest_paths(base_unw_paths, crop, params, xlks)
@@ -193,7 +202,6 @@ def _merge_timeseries(rows, cols, params):
             dest_tifs[i] = dest_tif.replace("_tif", "")
     else:
         dest_tifs = cf.get_dest_paths(base_unw_paths, crop, params, xlks)
-
 
     output_dir = params[cf.TMPDIR]
 

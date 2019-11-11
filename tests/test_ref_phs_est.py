@@ -26,6 +26,7 @@ import unittest
 import numpy as np
 
 import pyrate.core.orbital
+import pyrate.core.shared
 from pyrate.core import ifgconstants as ifc, config as cf
 from pyrate.core.ref_phs_est import ReferencePhaseError
 from pyrate.core.shared import CorrectionStatusError
@@ -142,8 +143,8 @@ class RefPhsEstimationLegacyTestMethod1Serial(unittest.TestCase):
 
         xlks, ylks, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
 
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
                                                params, xlks)
@@ -244,8 +245,8 @@ class RefPhsEstimationLegacyTestMethod1Parallel(unittest.TestCase):
 
         xlks, ylks, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
 
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
                                                params, xlks)
@@ -342,8 +343,8 @@ class RefPhsEstimationLegacyTestMethod2Serial(unittest.TestCase):
 
         xlks, ylks, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
 
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
                                                params, xlks)
@@ -439,8 +440,8 @@ class RefPhsEstimationLegacyTestMethod2Parallel(unittest.TestCase):
 
         xlks, ylks, crop = cf.transform_params(params)
 
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST],    
-                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
+                                                               params[cf.OBS_DIR])
 
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
                                        params, xlks)

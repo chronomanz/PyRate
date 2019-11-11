@@ -25,11 +25,13 @@ from joblib import Parallel, delayed
 import numpy as np
 from pyrate.core import shared, mpiops, config as cf, prepifg_helper, gamma, roipac
 from pyrate.core.prepifg_helper import PreprocessError
+from pyrate.configuration import Configuration
 
 log = logging.getLogger(__name__)
 
 GAMMA = 1
 ROIPAC = 0
+
 
 def main(params=None):
     """
@@ -41,33 +43,27 @@ def main(params=None):
     # This probably won't be a problem because input list won't be reordered
     # and the original gamma generated list is ordered) this may not affect
     # the important pyrate stuff anyway, but might affect gen_thumbs.py.
-    # Going to assume base_ifg_paths is ordered correcly
+    # Going to assume base_ifg_paths is ordered correct
     # pylint: disable=too-many-branches
-    usage = 'Usage: pyrate prepifg <config_file>'
+
     if mpiops.size > 1:  # Over-ride input options if this is an MPI job
         params[cf.PARALLEL] = False
 
-    if params:
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
+    config_file = params["config_file_path"]
+    configration_settings = Configuration(config_file)
+    base_ifg_paths = configration_settings.base_interferogram_paths
 
-    else:
-        # if params not provided read from config file
-        if (not params) and (len(sys.argv) < 3):
-            print(usage)
-            return
-        base_ifg_paths, _, params = cf.get_ifg_paths(sys.argv[2])
-
-    if params[cf.DEM_FILE] is not None: # optional DEM conversion
+    if params[cf.DEM_FILE] is not None:  # optional DEM conversion
         base_ifg_paths.append(params[cf.DEM_FILE])
 
     processor = params[cf.PROCESSOR]  # roipac or gamma
-    if processor == GAMMA: # Incidence/elevation only supported for GAMMA
+    if processor == GAMMA:  # Incidence/elevation only supported for GAMMA
         if params[cf.APS_INCIDENCE_MAP]:
             base_ifg_paths.append(params[cf.APS_INCIDENCE_MAP])
         if params[cf.APS_ELEVATION_MAP]:
             base_ifg_paths.append(params[cf.APS_ELEVATION_MAP])
 
-    shared.mkdir_p(params[cf.OUT_DIR]) # create output dir
+    shared.mkdir_p(params[cf.OUT_DIR])  # create output dir
 
     process_base_ifgs_paths = np.array_split(base_ifg_paths, mpiops.size)[mpiops.rank]
     gtiff_paths = [shared.output_tiff_filename(f, params[cf.OBS_DIR]) for f in process_base_ifgs_paths]
@@ -103,6 +99,7 @@ def do_prepifg(gtiff_paths, params):
     else:
         [_prepifg_multiprocessing(p, xlooks, ylooks, exts, thresh, crop, params) for p in gtiff_paths]
 
+
 def _prepifg_multiprocessing(path, xlooks, ylooks, exts, thresh, crop, params):
     """
     Multiprocessing wrapper for prepifg
@@ -124,4 +121,3 @@ def _prepifg_multiprocessing(path, xlooks, ylooks, exts, thresh, crop, params):
         coherence_thresh = None
 
     prepifg_helper.prepare_ifg(path, xlooks, ylooks, exts, thresh, crop, out_path=params[cf.OUT_DIR], header=header, coherence_path=coherence_path, coherence_thresh=coherence_thresh)
-

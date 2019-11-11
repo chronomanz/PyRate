@@ -32,6 +32,7 @@ from numpy.testing import assert_array_equal
 from osgeo import gdal
 from osgeo.gdal import Open, Dataset, UseExceptions
 
+import pyrate.core.shared
 from tests.common import SML_TEST_TIF, SML_TEST_DEM_TIF, TEMPDIR
 from pyrate.core import shared, ifgconstants as ifc, config as cf, prepifg_helper, gamma
 from pyrate import prepifg, conv2tif
@@ -352,7 +353,7 @@ class WriteUnwTest(unittest.TestCase):
         cls.params[cf.REF_EST_METHOD] = 1
         cls.params[cf.DEM_FILE] = common.SML_TEST_DEM_GAMMA
         # base_unw_paths need to be geotiffed and multilooked by run_prepifg
-        cls.base_unw_paths = cf.original_ifg_paths(
+        cls.base_unw_paths = pyrate.core.shared.original_ifg_paths(
             cls.params[cf.IFG_FILE_LIST], cls.params[cf.OBS_DIR])
         cls.base_unw_paths.append(common.SML_TEST_DEM_GAMMA)
 
