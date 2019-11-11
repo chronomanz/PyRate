@@ -307,6 +307,7 @@ def get_config_params(path: str, validate: bool=True, step: str=CONV2TIF) -> Dic
             txt += line
     params = _parse_conf_file(txt, validate, step)
     params[TMPDIR] = os.path.join(os.path.abspath(params[OUT_DIR]), 'tmpdir')
+    params["config_file_path"] = path
 
     return params
 
@@ -1169,13 +1170,13 @@ def validate_prepifg_tifs_exist(ifg_file_list: str, obs_dir: str, pars: Dict) ->
     errors = []
     base_paths = [os.path.join(obs_dir, ifg) for ifg in parse_namelist(ifg_file_list)]
     ifg_paths = get_dest_paths(base_paths, pars[IFG_CROP_OPT], pars, pars[IFG_LKSX])
+
     for i, ifg_path in enumerate(ifg_paths):
         ifg_paths[i] = ifg_path.replace("_tif", "")
 
     for path in ifg_paths:
         if not os.path.exists(path):
             errors.append(f"Interferogram: '{path}'  is "
-            errors.append(f"'{IFG_FILE_LIST}': interferogram '{fname}' is "
                           f"required as a cropped and subsampled geotiff but "
                           f"could not be found. Make sure 'prepifg' has been "
                           f"run and ensure the '{IFG_LKSX}' and '{IFG_CROP_OPT}' "
