@@ -34,22 +34,29 @@ class Configuration(object):
 
         config = configparser.RawConfigParser()
         config.read_string(file_content)
-        self.root = pathlib.Path(config["root"]["obsdir"])
 
-        self.dem_header_path = pathlib.Path(config["root"]["demHeaderFile"])
-        self.dem_path = pathlib.Path(config["root"]["demfile"])
+        # TODO atm accept relative path wrt input file
+        #  get rid of this functionality this causes ambiguity
+        self.root = pathlib.Path(config_file).parents[0]
+
+        self.obs_dir = self.root/pathlib.Path(config["root"]["obsdir"])
+
+        self.dem_header_path = self.root/pathlib.Path(config["root"]["demHeaderFile"])
+        self.dem_path = self.root/pathlib.Path(config["root"]["demfile"])
 
         self.header_paths = []
+
         with open(self.root/config["root"]["slcfilelist"], 'r') as f:
             for line in f.readlines():
                 self.header_paths.append(self.root/line.strip())
 
-        self.interferogram_paths = []
+        self.base_interferogram_paths = []
 
-        for path_str in pathlib.Path(config["root"]["ifgfilelist"]).read_text().split('\n'):
+        for path_str in pathlib.Path(self.root/config["root"]["ifgfilelist"]).read_text().split('\n'):
             if len(path_str) > 1:
                 path = pathlib.Path(path_str)
-                self.interferogram_paths.append(self.root/path)
+                # TODO slowly replace the dependency of path being a str with pathlib module
+                self.base_interferogram_paths.append(str(self.obs_dir/path))
 
 
         self.processor = config["root"]["processor"]
@@ -73,6 +80,9 @@ class Configuration(object):
         self.thresh = config["root"]["noDataAveragingThreshold"]
         self.coherence_thresh = config["root"]["cohthresh"]
 
+
+
+
     def __str__ (self):
         pprint_string = ""
         for key, value in self.__dict__.items():
@@ -84,3 +94,10 @@ class Configuration(object):
             else:
                 pprint_string = pprint_string + str(key) + ": " + str(value) + "\n"
         return pprint_string
+
+
+
+if __name__ == "__main__":
+    config_file = "/Users/sheeced/Desktop/Projects/PyRate/input_parameters.conf"
+    configration_settings = Configuration(config_file)
+    print(configration_settings)
