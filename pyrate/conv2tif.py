@@ -26,7 +26,7 @@ import numpy as np
 
 from pyrate.core.prepifg_helper import PreprocessError
 from pyrate.core import shared, mpiops, config as cf, gamma, roipac
-
+from pyrate.configuration import Configuration
 log = logging.getLogger(__name__)
 
 GAMMA = 1
@@ -46,23 +46,17 @@ def main(params=None):
     # Going to assume base_ifg_paths is ordered correcly
     # pylint: disable=too-many-branches
 
-    usage = 'Usage: pyrate conv2tif -f <config_file>'
     if mpiops.size > 1:  # Over-ride input options if this is an MPI job
         params[cf.PARALLEL] = False
 
-    if params:
-        base_ifg_paths = cf.original_ifg_paths(params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
-    else:  # if params not provided read from config file
-        if (not params) and (len(sys.argv) < 3):
-            print(usage)
-            return
-        base_ifg_paths, _, params = cf.get_ifg_paths(sys.argv[2])
-        raw_config_file = sys.argv[2]
+    config_file = params["config_file_path"]
+    configration_settings = Configuration(config_file)
+    base_ifg_paths = configration_settings.base_interferogram_paths
 
     if params[cf.COH_MASK]:
         base_ifg_paths.extend(cf.coherence_paths(params))
 
-    if params[cf.DEM_FILE] is not None: # optional DEM conversion
+    if params[cf.DEM_FILE] is not None:  # optional DEM conversion
         base_ifg_paths.append(params[cf.DEM_FILE])
 
     processor = params[cf.PROCESSOR]  # roipac or gamma
@@ -90,16 +84,13 @@ def do_geotiff(base_unw_paths, params):
     parallel = params[cf.PARALLEL]
 
     if parallel:
-        log.info("Running geotiff conversion in parallel with {} "
-                 "processes".format(params[cf.PROCESSES]))
-        dest_base_ifgs = Parallel(n_jobs=params[cf.PROCESSES], 
-                         verbose=shared.joblib_log_level(cf.LOG_LEVEL))(
+        log.info("Running geotiff conversion in parallel with {} processes".format(params[cf.PROCESSES]))
+        dest_base_ifgs = Parallel(n_jobs=params[cf.PROCESSES], verbose=shared.joblib_log_level(cf.LOG_LEVEL))(
             delayed(_geotiff_multiprocessing)(p, params)
             for p in base_unw_paths)
     else:
         log.info("Running geotiff conversion in serial")
-        dest_base_ifgs = [_geotiff_multiprocessing(b, params)
-                          for b in base_unw_paths]
+        dest_base_ifgs = [_geotiff_multiprocessing(b, params) for b in base_unw_paths]
     return dest_base_ifgs
 
 
