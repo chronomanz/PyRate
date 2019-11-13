@@ -59,12 +59,12 @@ def main(params=None):
     if params[cf.DEM_FILE] is not None:  # optional DEM conversion
         base_ifg_paths.append(params[cf.DEM_FILE])
 
-    processor = params[cf.PROCESSOR]  # roipac or gamma
-    if processor == GAMMA:  # Incidence/elevation only supported for GAMMA
-        if params[cf.APS_INCIDENCE_MAP]:
-            base_ifg_paths.append(params[cf.APS_INCIDENCE_MAP])
-        if params[cf.APS_ELEVATION_MAP]:
-            base_ifg_paths.append(params[cf.APS_ELEVATION_MAP])
+    # processor = params[cf.PROCESSOR]  # roipac or gamma
+    # if processor == GAMMA:  # Incidence/elevation only supported for GAMMA
+    #     if params[cf.APS_INCIDENCE_MAP]:
+    #         base_ifg_paths.append(params[cf.APS_INCIDENCE_MAP])
+    #     if params[cf.APS_ELEVATION_MAP]:
+    #         base_ifg_paths.append(params[cf.APS_ELEVATION_MAP])
 
     process_base_ifgs_paths = np.array_split(base_ifg_paths, mpiops.size)[mpiops.rank]
     gtiff_paths = do_geotiff(process_base_ifgs_paths, params)

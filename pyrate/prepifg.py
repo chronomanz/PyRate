@@ -56,12 +56,12 @@ def main(params=None):
     if params[cf.DEM_FILE] is not None:  # optional DEM conversion
         base_ifg_paths.append(params[cf.DEM_FILE])
 
-    processor = params[cf.PROCESSOR]  # roipac or gamma
-    if processor == GAMMA:  # Incidence/elevation only supported for GAMMA
-        if params[cf.APS_INCIDENCE_MAP]:
-            base_ifg_paths.append(params[cf.APS_INCIDENCE_MAP])
-        if params[cf.APS_ELEVATION_MAP]:
-            base_ifg_paths.append(params[cf.APS_ELEVATION_MAP])
+    # processor = params[cf.PROCESSOR]  # roipac or gamma
+    # if processor == GAMMA:  # Incidence/elevation only supported for GAMMA
+    #     if params[cf.APS_INCIDENCE_MAP]:
+    #         base_ifg_paths.append(params[cf.APS_INCIDENCE_MAP])
+    #     if params[cf.APS_ELEVATION_MAP]:
+    #         base_ifg_paths.append(params[cf.APS_ELEVATION_MAP])
 
     shared.mkdir_p(params[cf.OUT_DIR])  # create output dir
 

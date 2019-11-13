@@ -244,10 +244,9 @@ def gamma_header(ifg_file_path, params):
                                     slc_dir=slc_dir)
     combined_headers = manage_headers(dem_hdr_path, header_paths)
 
-    if os.path.basename(ifg_file_path).split('.')[1] == \
-            (params[cf.APS_INCIDENCE_EXT] or params[cf.APS_ELEVATION_EXT]):
-        # TODO: implement incidence class here
-        combined_headers['FILE_TYPE'] = 'Incidence'
+    # if os.path.basename(ifg_file_path).split('.')[1] == (params[cf.APS_INCIDENCE_EXT] or params[cf.APS_ELEVATION_EXT]):
+    #     # TODO: implement incidence class here
+    #     combined_headers['FILE_TYPE'] = 'Incidence'
 
     return combined_headers
 
