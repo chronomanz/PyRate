@@ -1001,3 +1001,5 @@ tests/test_data/small_test/gamma_obs/tmpdir/tscuml_0.npy
 tests/test_data/small_test/gamma_obs/tmpdir/tsincr_0.npy
 
 tests/test_data/small_test/gamma_obs/tmpdir/tsincr_aps_0.npy
+
+.DS_Store
