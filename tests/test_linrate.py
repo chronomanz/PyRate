@@ -93,8 +93,7 @@ class LegacyEqualityTest(unittest.TestCase):
 
         xlks, _, crop = cf.transform_params(params)
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(
-            params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
         
         dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
         print(f"base_ifg_paths={base_ifg_paths}") 
