@@ -34,6 +34,7 @@ from osgeo import gdal
 from pyrate.core.ifgconstants import YEARS_PER_DAY
 from pyrate import CONV2TIF, PREPIFG, PROCESS, MERGE
 from pyrate.configuration import Configuration
+from pyrate.default_parameters import PYRATE_DEFAULT_CONFIGRATION
 
 _logger = logging.getLogger(__name__)
 
@@ -47,106 +48,105 @@ TWELVE_DIGIT_EPOCH_PAIR = r'\d{6}-\d{6}'
 EIGHT_DIGIT_EPOCH = r'\d{8}'
 MINIMUM_NUMBER_EPOCHS = 3
 
-# constants for lookups
 #: STR; Name of input interferogram list file
-IFG_FILE_LIST = 'ifgfilelist'
+IFG_FILE_LIST = 'IFG_FILE_LIST'
 #: BOOL (0/1); The interferogram processor used (0==ROIPAC, 1==GAMMA)
-PROCESSOR = 'processor'
+PROCESSOR = 'PROCESSOR'
 #: STR; Name of directory containing input interferograms.
-OBS_DIR = 'obsdir'
+OBS_DIR = 'OBS_DIR'
 #: STR; Name of directory for saving output products
-OUT_DIR = 'outdir'
+OUT_DIR = 'OUT_DIR'
 #: STR; Name of Digital Elevation Model file
-DEM_FILE = 'demfile'
+DEM_FILE = 'DEM_FILE'
 #: STR; Name of the DEM header file
-DEM_HEADER_FILE = 'demHeaderFile'
+DEM_HEADER_FILE = 'DEM_HEADER_FILE'
 #: STR; Name of directory containing GAMMA SLC header files
-SLC_DIR = 'slcFileDir'
+SLC_DIR = 'SLC_DIR'
 #: STR; Name of the file list containing the pool of available SLC headers
-SLC_FILE_LIST = 'slcfilelist'
+SLC_FILE_LIST = 'SLC_FILE_LIST'
 
 
 # STR; The projection of the input interferograms.
 # TODO: only used in tests; deprecate?
-INPUT_IFG_PROJECTION = 'projection'
+INPUT_IFG_PROJECTION = 'INPUT_IFG_PROJECTION'
 #: FLOAT; The no data value in the interferogram files.
-NO_DATA_VALUE = 'noDataValue'
+NO_DATA_VALUE = 'NO_DATA_VALUE'
 #: FLOAT; No data averaging threshold for prepifg
-NO_DATA_AVERAGING_THRESHOLD = 'noDataAveragingThreshold'
+NO_DATA_AVERAGING_THRESHOLD = 'NO_DATA_AVERAGING_THRESHOLD'
 # BOOL (1/2/3); Re-project data from Line of sight, 1 = vertical, 2 = horizontal, 3 = no conversion
 #REPROJECTION = 'prjflag' # NOT CURRENTLY USED
 #: BOOL (0/1): Convert no data values to Nan
-NAN_CONVERSION = 'nan_conversion'
+NAN_CONVERSION = 'NAN_CONVERSION'
 
 # Prepifg parameters
 #: BOOL (1/2/3/4); Method for cropping interferograms, 1 = minimum overlapping area (intersection), 2 = maximum area (union), 3 = customised area, 4 = all ifgs already same size
-IFG_CROP_OPT = 'ifgcropopt'
+IFG_CROP_OPT = 'IFG_CROP_OPT'
 #: INT; Multi look factor for interferogram preparation in x dimension
-IFG_LKSX = 'ifglksx'
+IFG_LKSX = 'IFG_LKSX'
 #: INT; Multi look factor for interferogram preparation in y dimension
-IFG_LKSY = 'ifglksy'
+IFG_LKSY = 'IFG_LKSY'
 #: FLOAT; Minimum longitude for cropping with method 3
-IFG_XFIRST = 'ifgxfirst'
+IFG_XFIRST = 'IFG_XFIRST'
 #: FLOAT; Maximum longitude for cropping with method 3
-IFG_XLAST = 'ifgxlast'
+IFG_XLAST = 'IFG_XLAST'
 #: FLOAT; Minimum latitude for cropping with method 3
-IFG_YFIRST = 'ifgyfirst'
+IFG_YFIRST = 'IFG_YFIRST'
 #: FLOAT; Maximum latitude for cropping with method 3
-IFG_YLAST = 'ifgylast'
+IFG_YLAST = 'IFG_YLAST'
 
 # reference pixel parameters
 #: INT; Longitude (decimal degrees) of reference pixel, or if left blank a search will be performed
-REFX = 'refx'
+REFX = 'REFX'
 #: INT; Latitude (decimal degrees) of reference pixel, or if left blank a search will be performed
-REFY = 'refy'
+REFY = 'REFY'
 #: INT; Number of reference pixel grid search nodes in x dimension
-REFNX = "refnx"
+REFNX = "REFNX"
 #: INT; Number of reference pixel grid search nodes in y dimension
-REFNY = "refny"
+REFNY = "REFNY"
 #: INT; Dimension of reference pixel search window (in number of pixels)
-REF_CHIP_SIZE = 'refchipsize'
+REF_CHIP_SIZE = 'REF_CHIP_SIZE'
 #: FLOAT; Minimum fraction of observations required in search window for pixel to be a viable reference pixel
-REF_MIN_FRAC = 'refminfrac'
+REF_MIN_FRAC = 'REF_MIN_FRAC'
 #: BOOL (1/2); Reference phase estimation method (1: median of the whole interferogram, 2: median within the window surrounding the reference pixel)
-REF_EST_METHOD = 'refest'
+REF_EST_METHOD = 'REF_EST_METHOD'
 
 # coherence masking parameters
 #: BOOL (0/1); Perform coherence masking (1: yes, 0: no)
-COH_MASK = 'cohmask'
+COH_MASK = 'COH_MASK'
 #: FLOAT; Coherence threshold for masking
-COH_THRESH = 'cohthresh'
+COH_THRESH = 'COH_THRESH'
 #: STR; Directory containing coherence files; defaults to OBS_DIR if not provided
-COH_FILE_DIR = 'cohfiledir'
+COH_FILE_DIR = 'COH_FILE_DIR'
 #: STR; Name of the file list containing the pool of available coherence files
-COH_FILE_LIST = 'cohfilelist'
+COH_FILE_LIST = 'COH_FILE_LIST'
 
 #atmospheric error correction parameters NOT CURRENTLY USED
-APS_CORRECTION = 'apscorrect'
-APS_METHOD = 'apsmethod'
-APS_INCIDENCE_MAP = 'incidencemap'
+APS_CORRECTION = 'APS_CORRECTION'
+APS_METHOD = 'APS_METHOD'
+APS_INCIDENCE_MAP = 'APS_INCIDENCE_MAP'
 APS_INCIDENCE_EXT = 'APS_INCIDENCE_EXT'
-APS_ELEVATION_MAP = 'elevationmap'
+APS_ELEVATION_MAP = 'APS_ELEVATION_MAP'
 APS_ELEVATION_EXT = 'APS_ELEVATION_EXT'
 
 # orbital error correction/parameters
 #: BOOL (1/0); Perform orbital error correction (1: yes, 0: no)
-ORBITAL_FIT = 'orbfit'
+ORBITAL_FIT = 'ORBITAL_FIT'
 #: BOOL (1/2); Method for orbital error correction (1: independent, 2: network)
-ORBITAL_FIT_METHOD = 'orbfitmethod'
+ORBITAL_FIT_METHOD = 'ORBITAL_FIT_METHOD'
 #: BOOL (1/2/3) Polynomial order of orbital error model (1: planar in x and y - 2 parameter model, 2: quadratic in x and y - 5 parameter model, 3: quadratic in x and cubic in y - part-cubic 6 parameter model)
-ORBITAL_FIT_DEGREE = 'orbfitdegrees'
+ORBITAL_FIT_DEGREE = 'ORBITAL_FIT_DEGREE'
 #: INT; Multi look factor for orbital error calculation in x dimension
-ORBITAL_FIT_LOOKS_X = 'orbfitlksx'
+ORBITAL_FIT_LOOKS_X = 'ORBITAL_FIT_LOOKS_X'
 #: INT; Multi look factor for orbital error calculation in y dimension
-ORBITAL_FIT_LOOKS_Y = 'orbfitlksy'
+ORBITAL_FIT_LOOKS_Y = 'ORBITAL_FIT_LOOKS_Y'
 
 # Stacking parameters
 #: FLOAT; Threshold ratio between 'model minus observation' residuals and a-priori observation standard deviations for stacking estimate acceptance (otherwise remove furthest outlier and re-iterate)
-LR_NSIG = 'nsig'
+LR_NSIG = 'LR_NSIG'
 #: INT; Number of required observations per pixel for stacking to occur
-LR_PTHRESH = 'pthr'
+LR_PTHRESH = 'LR_PTHRESH'
 #: FLOAT; Maximum allowable standard error for pixels in stacking
-LR_MAXSIG = 'maxsig'
+LR_MAXSIG = 'LR_MAXSIG'
 
 # atmospheric delay errors fitting parameters NOT CURRENTLY USED
 # atmfitmethod = 1: interferogram by interferogram; atmfitmethod = 2, epoch by epoch
@@ -155,44 +155,44 @@ LR_MAXSIG = 'maxsig'
 
 # APS correction parameters
 #: BOOL (0/1) Perform APS correction (1: yes, 0: no)
-APSEST = 'apsest'
+APSEST = 'APSEST'
 # temporal low-pass filter parameters
 #: INT (1/2/3); Method for temporal filtering (1: Gaussian, 2: Triangular, 3: Mean filter)
-TLPF_METHOD = 'tlpfmethod'
+TLPF_METHOD = 'TLPF_METHOD'
 #: FLOAT; Cutoff time for gaussian filter in years;
-TLPF_CUTOFF = 'tlpfcutoff'
+TLPF_CUTOFF = 'TLPF_CUTOFF'
 #: INT; Number of required input observations per pixel for temporal filtering
-TLPF_PTHR = 'tlpfpthr'
+TLPF_PTHR = 'TLPF_PTHR'
 # spatially correlated noise low-pass filter parameters
 #: INT (1/2); Method for spatial filtering(1: butterworth; 2: gaussian)
-SLPF_METHOD = 'slpfmethod'
+SLPF_METHOD = 'SLPF_METHOD'
 #: FLOAT; Cutoff  value for both butterworth and gaussian filters in km
-SLPF_CUTOFF = 'slpfcutoff'
+SLPF_CUTOFF = 'SLPF_CUTOFF'
 #: INT; Order of butterworth filter (default 1)
-SLPF_ORDER = 'slpforder'
+SLPF_ORDER = 'SLPF_ORDER'
 #: INT (1/0); Do spatial interpolation at NaN locations (1 for interpolation, 0 for zero fill)
-SLPF_NANFILL = 'slpnanfill'
+SLPF_NANFILL = 'SLPF_NANFILL'
 #: #: STR; Method for spatial interpolation (one of: linear, nearest, cubic), only used when slpnanfill=1
-SLPF_NANFILL_METHOD = 'slpnanfill_method'
+SLPF_NANFILL_METHOD = 'SLPF_NANFILL_METHOD'
 
 # Time series parameters
 #: BOOL (1/0); Perform time series calculation (1: yes, 0: no)
-TIME_SERIES_CAL = 'tscal'
+TIME_SERIES_CAL = 'TIME_SERIES_CAL'
 #: INT (1/2); Method for time series inversion (1: Laplacian Smoothing; 2: SVD)
-TIME_SERIES_METHOD = 'tsmethod'
+TIME_SERIES_METHOD = 'TIME_SERIES_METHOD'
 #: INT; Number of required input observations per pixel for time series inversion
-TIME_SERIES_PTHRESH = 'ts_pthr'
+TIME_SERIES_PTHRESH = 'TIME_SERIES_PTHRESH'
 #: INT (1/2); Order of Laplacian smoothing operator, first or second order
-TIME_SERIES_SM_ORDER = 'smorder'
+TIME_SERIES_SM_ORDER = 'TIME_SERIES_SM_ORDER'
 #: FLOAT; Laplacian smoothing factor (values used is 10**smfactor)
-TIME_SERIES_SM_FACTOR = 'smfactor'
+TIME_SERIES_SM_FACTOR = 'TIME_SERIES_SM_FACTOR'
 # tsinterp is automatically assigned in the code; not needed in conf file
 #TIME_SERIES_INTERP = 'tsinterp'
 
 #: BOOL (0/1/2); Use parallelisation/Multi-threading (0: in serial, 1: in parallel by rows, 2: in parallel by pixel)
-PARALLEL = 'parallel'
+PARALLEL = 'PARALLEL'
 #: INT; Number of processes for multi-threading
-PROCESSES = 'processes'
+PROCESSES = 'PROCESSES'
 
 # Orbital error correction constants for conversion to readable strings
 INDEPENDENT_METHOD = 1
@@ -209,7 +209,7 @@ ORB_DEGREE_NAMES = {PLANAR: 'PLANAR',
                     PART_CUBIC: 'PART CUBIC'}
 
 # dir for temp files
-TMPDIR = 'tmpdir'
+TMPDIR = 'TMPDIR'
 
 # Lookup to help convert args to correct type/defaults
 # format is	key : (conversion, default value)
@@ -217,8 +217,8 @@ TMPDIR = 'tmpdir'
 PARAM_CONVERSION = {
         # REPROJECTION : (int, 3), # Default no conversion, CONVERSION NOT IMPLEMENTED
         IFG_CROP_OPT : (int, 1),  # default to area 'intersection' option
-        IFG_LKSX : (int, NO_MULTILOOKING),
-        IFG_LKSY : (int, NO_MULTILOOKING),
+        IFG_LKSX : (int, 1),
+        IFG_LKSY : (int, 1),
         IFG_XFIRST : (float, None),
         IFG_XLAST : (float, None),
         IFG_YFIRST : (float, None),
@@ -284,89 +284,121 @@ DEFAULT_TO_OBS_DIR = [SLC_DIR, COH_FILE_DIR]
 INT_KEYS = [APS_CORRECTION, APS_METHOD]
 
 
-def get_config_params(path: str, validate: bool=True, step: str=CONV2TIF) -> Dict:
+def get_config_params(config_file_path):
     """
     Reads the parameters file provided by the user and converts it into
     a dictionary.
 
     Args:
         path: Absolute path to the parameters file.
-        validate: Validate the parameters if True, otherwise skip validation.
-        step: The current step of the PyRate workflow.
 
     Returns:
        A dictionary of parameters.
     """
-    txt = ''
-    with open(path, 'r') as inputFile:
+
+    # TODO Fix this merge multiple steps for reading the input file
+    config_file_content = ''
+    with open(config_file_path, 'r') as inputFile:
         for line in inputFile:
-            if any(x in line for x in PATHS):
-                pos = line.find('~')
-                if pos != -1:
-                    # create expanded line
-                    line = line[:pos] + os.environ['HOME'] + line[(pos+1):]
-            txt += line
-    params = _parse_conf_file(txt, validate, step)
+            config_file_content += line
+
+    config_file_content = [ln for ln in config_file_content.split('\n')]
+
+    params = _parse_conf_file(config_file_content)
+
     params[TMPDIR] = os.path.join(os.path.abspath(params[OUT_DIR]), 'tmpdir')
-    params["config_file_path"] = path
+    params["config_file_path"] = config_file_path
 
     return params
 
+def set_parameter_value(data_type, input_value, default_value):
 
-def _parse_conf_file(content, validate: bool=True, step: str=CONV2TIF) -> Dict:
+    if len(input_value) < 1:
+        input_value = "0"
+    if input_value is not None:
+        return data_type(input_value)
+    return default_value
+
+def validate_parameter_value(input_name, input_value, min_value=None, max_value=None,possible_values=None):
+    if min_value is not None:
+        if input_value < min_value:
+            print("Invalid value for "+input_name+" supplied: "+input_value+". Please provided a valid value greater than "+min_value+".")
+            return False
+    if max_value is not None:
+        if input_value > max_value:
+            print("Invalid value for "+input_name+" supplied: "+input_value+". Please provided a valid value less than "+max_value+".")
+            return False
+    if possible_values is not None:
+        if input_value not in possible_values:
+            print("Invalid value for " + input_name + " supplied: " + input_value + ". Please provided a valid value from with in: " + str(possible_values) + ".")
+
+    return True
+
+
+def _parse_conf_file(config_file_content):
     """
     Converts the parameters from their text form into a dictionary.
 
     Args:
-        content: Parameters as text.
+        config_file_content: Parameters as text.
 
     Returns:
         A dictionary of parameters.
-    """
-    def _is_valid(line):
-        """
-        Check if line is not empty or has % or #
-        """
-        return line != "" and line[0] not in "%#"
 
-    lines = [ln.split() for ln in content.split('\n') if _is_valid(ln)]
-
-    # convert "field:   value" lines to [field, value]
-    kvpair = [(e[0].rstrip(":"), e[1]) for e in lines if len(e) == 2] + [(e[0].rstrip(":"), None) for e in lines if len(e) == 1]
+    kvpair = [(e[0].rstrip(":"), e[1]) for e in config_file_content if len(e) == 2] + [(e[0].rstrip(":"), None) for e in config_file_content if len(e) == 1]
     parameters = dict(kvpair)
-    for p in PATHS:
-        if p not in parameters:
-            parameters[p] = None
 
-    for p in INT_KEYS:
-        if p not in parameters:
-            parameters[p] = '0'  # insert dummies
-
-    parameters = _handle_extra_parameters(parameters)
-
-    if not parameters:
-        raise ConfigException('Cannot parse any parameters from config file')
-
-    return _parse_pars(parameters, validate, step)
-
-def _handle_extra_parameters(params):
     """
-    Function to check if requirements for weather model correction are given.
-    """
-    params[APS_INCIDENCE_EXT] = None
-    params[APS_ELEVATION_EXT] = None
 
-    if params[APS_INCIDENCE_MAP] is not None:
-        params[APS_INCIDENCE_EXT] = os.path.basename(params[APS_INCIDENCE_MAP]).split('.')[-1]
-        params[APS_ELEVATION_MAP] = None
-        params[APS_ELEVATION_EXT] = None
-        return params
+    parameters = {}
+    for line in config_file_content:
+        line = line.strip()
+        if len(line) > 1:
+            if line[0] not in "#":
+                if ":" in line:
+                    config_key, config_value = line.split(":")
+                    config_key = config_key.strip()
+                    config_value = config_value.strip()
+                    parameters[config_key] = config_value
 
-    # define APS_ELEVATON_EXT for gamma prepifg
-    if params[APS_ELEVATION_MAP] is not None:
-        params[APS_ELEVATION_EXT] = os.path.basename(params[APS_ELEVATION_MAP]).split('.')[-1]
+    # handle input files and folder
+    if not parameters["OBS_DIR"] or not os.path.isdir(parameters["OBS_DIR"]):
+        print("OBS_DIR not supplied. Please provided Directory for the (unwrapped) interferograms.")
 
-    return params
+
+    if not parameters["IFG_FILE_LIST"] or os.path.isfile(parameters["IFG_FILE_LIST"]):
+        print("IFG_FILE_LIST not supplied. Please provided File containing the list of interferograms to use.")
+
+    if not parameters["DEM_FILE"] or os.path.isfile(parameters["DEM_FILE"]):
+        print("DEM_FILE not supplied. Please provided the DEM file used in the InSAR processing.")
+
+    if not parameters["DEM_HEADER_FILE"] or os.path.isfile(parameters["DEM_HEADER_FILE"]):
+        print("DEM_HEADER_FILE not supplied. Please provided the DEM header file from GAMMA (*.par) or ROI_PAC (*.rsc).")
+
+    if not parameters["SLC_DIR"] or os.path.isdir(parameters["SLC_DIR"]):
+        print("SLC_DIR not supplied. GAMMA only, please provided the directory containing GAMMA slc.par header files for all epochs.")
+
+    if not parameters["SLC_FILE_LIST"] or os.path.isfile(parameters["SLC_FILE_LIST"]):
+        print("SLC_FILE_LIST not supplied. GAMMA only, please provided the file listing the pool of available slc.par header files.")
+
+    if parameters["COH_FILE_DIR"] and os.path.isdir(parameters["COH_FILE_DIR"]):
+        print("Invalid value for COH_FILE_DIR supplied. Please provided a valid directory  for COH_FILE_DIR.")
+
+    if parameters["COH_FILE_DIR"] and os.path.isdir(parameters["COH_FILE_DIR"]) and not os.path.isfile(parameters["COH_FILE_LIST"]):
+        print("COH_FILE_LIST not supplied. Please provided the file listing the pool of available coherence files.")
+
+    if parameters["OUT_DIR"] or os.path.isdir(parameters["OUT_DIR"]):
+        print("Invalid value for OUT_DIR supplied. Please provided a valid value for directory to write the outputs too.")
+
+    # handle control parameters
+    for default_parameter in PYRATE_DEFAULT_CONFIGRATION:
+        parameter_name = default_parameter["Name"]
+        parameters[parameter_name] = set_parameter_value(default_parameter["DataType"], parameters[parameter_name], default_parameter["DefaultValue"])
+        validate_parameter_value(parameter_name, parameters[parameter_name], default_parameter["MinValue"], default_parameter["MaxValue"], default_parameter["PossibleValues"])
+
+
+    return parameters
+
 
 def _parse_pars(pars, validate: bool=True, step: str=CONV2TIF) -> Dict:
     """
