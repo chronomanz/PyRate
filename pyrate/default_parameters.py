@@ -3,9 +3,9 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "PROCESSOR",
         "DataType": int,
         "DefaultValue": None,
-        "MinValue": 0,
-        "MaxValue": 2,
-        "PossibleValues": None
+        "MinValue": None,
+        "MaxValue": None,
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "NO_DATA_AVERAGING_THRESHOLD",
@@ -29,7 +29,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "PARALLEL",
@@ -37,7 +37,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1, 2]
     },
     {
         "Name": "PROCESSES",
@@ -53,7 +53,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "COH_THRESH",
@@ -69,13 +69,13 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 1,
         "MinValue": 1,
         "MaxValue": 4,
-        "PossibleValues": None
+        "PossibleValues": [1, 2, 3, 4]
     },
     {
         "Name": "IFG_LKSX",
         "DataType": int,
         "DefaultValue": 1,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -83,7 +83,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "IFG_LKSY",
         "DataType": int,
         "DefaultValue": 1,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -139,32 +139,33 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "REFNX",
         "DataType": int,
         "DefaultValue": 10,
-        "MinValue": None,
-        "MaxValue": None,
+        "MinValue": 1,
+        "MaxValue": 50,
         "PossibleValues": None
     },
     {
         "Name": "REFNY",
         "DataType": int,
         "DefaultValue": 10,
-        "MinValue": None,
-        "MaxValue": None,
+        "MinValue": 1,
+        "MaxValue": 50,
         "PossibleValues": None
     },
     {
         "Name": "REF_CHIP_SIZE",
         "DataType": int,
         "DefaultValue": 21,
-        "MinValue": None,
-        "MaxValue": None,
-        "PossibleValues": None
+        "MinValue": 1,
+        "MaxValue": 101,
+        "PossibleValues": None,
+        "Note": "Must be an odd number."
     },
     {
         "Name": "REF_MIN_FRAC",
         "DataType": float,
         "DefaultValue": 0.5,
-        "MinValue": None,
-        "MaxValue": None,
+        "MinValue": 0.0,
+        "MaxValue": 1.0,
         "PossibleValues": None
     },
     {
@@ -173,7 +174,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 1,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2]
     },
     {
         "Name": "ORBITAL_FIT",
@@ -181,7 +182,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "ORBITAL_FIT_METHOD",
@@ -189,7 +190,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 2,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1,2]
     },
     {
         "Name": "ORBITAL_FIT_DEGREE",
@@ -197,13 +198,13 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 1,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2, 3]
     },
     {
         "Name": "ORBITAL_FIT_LOOKS_X",
         "DataType": int,
         "DefaultValue": 10,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -211,7 +212,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "ORBITAL_FIT_LOOKS_Y",
         "DataType": int,
         "DefaultValue": 10,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -221,7 +222,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "SLPF_METHOD",
@@ -229,13 +230,13 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 1,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2]
     },
     {
         "Name": "SLPF_CUTOFF",
         "DataType": float,
         "DefaultValue": 1.0,
-        "MinValue": None,
+        "MinValue": 0.001,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -245,7 +246,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 1,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2, 3]
     },
     {
         "Name": "SLPF_NANFILL",
@@ -253,7 +254,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "SLPF_NANFILL_METHOD",
@@ -269,7 +270,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 1,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2, 3]
     },
     {
         "Name": "TLPF_CUTOFF",
@@ -283,7 +284,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "TLPF_PTHR",
         "DataType": int,
         "DefaultValue": 1,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -293,7 +294,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 0,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [0, 1]
     },
     {
         "Name": "TIME_SERIES_METHOD",
@@ -301,7 +302,7 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": 2,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2]
     },
     {
         "Name": "TIME_SERIES_SM_ORDER",
@@ -309,21 +310,21 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "DefaultValue": None,
         "MinValue": None,
         "MaxValue": None,
-        "PossibleValues": None
+        "PossibleValues": [1, 2]
     },
     {
         "Name": "TIME_SERIES_SM_FACTOR",
         "DataType": float,
         "DefaultValue": -1.0,
-        "MinValue": None,
-        "MaxValue": None,
+        "MinValue": -5.0,
+        "MaxValue": 0,
         "PossibleValues": None
     },
     {
         "Name": "TIME_SERIES_PTHRESH",
         "DataType": int,
         "DefaultValue": 3,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -331,15 +332,15 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "LR_NSIG",
         "DataType": int,
         "DefaultValue": 2,
-        "MinValue": None,
-        "MaxValue": None,
+        "MinValue": 1,
+        "MaxValue": 10,
         "PossibleValues": None
     },
     {
         "Name": "LR_PTHRESH",
         "DataType": int,
         "DefaultValue": 3,
-        "MinValue": None,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     },
@@ -347,7 +348,23 @@ PYRATE_DEFAULT_CONFIGRATION = [
         "Name": "LR_MAXSIG",
         "DataType": int,
         "DefaultValue": 10,
-        "MinValue": None,
+        "MinValue": 0,
+        "MaxValue": 1000,
+        "PossibleValues": None
+    },
+    {
+        "Name": "SUB_ROW",
+        "DataType": int,
+        "DefaultValue": 4,
+        "MinValue": 1,
+        "MaxValue": None,
+        "PossibleValues": None
+    },
+    {
+        "Name": "SUB_COL",
+        "DataType": int,
+        "DefaultValue": 1,
+        "MinValue": 1,
         "MaxValue": None,
         "PossibleValues": None
     }
