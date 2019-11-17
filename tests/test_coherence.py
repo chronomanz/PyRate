@@ -1,11 +1,6 @@
-import os
 import unittest
-import pytest
-import glob
-import copy
 
-import pyrate.core.config as cf
-from pyrate import conv2tif, prepifg
+import pyrate.prepifg
 from pyrate.core import gdal_python
 
 import os
@@ -59,7 +54,7 @@ class CoherenceMaskingTest(unittest.TestCase):
 
         # use the gdal_python.coherence_masking to find the actual mask dataset
         threshold = 0.3
-        gdal_python.coherence_masking(sample_gdal_dataset, coherence_mask_dataset, threshold)
+        pyrate.prepifg.coherence_masking(sample_gdal_dataset, coherence_mask_dataset, threshold)
         sample_gdal_array = np.nan_to_num(sample_gdal_dataset.GetRasterBand(1).ReadAsArray())
 
         # compare the artificial masked and actual masked datasets

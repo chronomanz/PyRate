@@ -26,12 +26,15 @@ from numpy import eye, array, ones
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.orbital
 import pyrate.core.shared
 import tests.common
-from pyrate.core import shared, ref_phs_est as rpe, config as cf, covariance as vcm_module
+from pyrate.core import shared, covariance as vcm_module
 from pyrate.core.linrate import linear_rate
-from pyrate import process, prepifg, conv2tif
+from pyrate import process, prepifg, conv2tif, configuration as cf
 from tests.common import (SML_TEST_DIR, prepare_ifgs_without_phase,
     TEST_CONF_ROIPAC, pre_prepare_ifgs, remove_tifs)
 
@@ -83,19 +86,20 @@ class LegacyEqualityTest(unittest.TestCase):
         params = cf.get_config_params(TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.TMPDIR] = os.path.join(params[cf.OUT_DIR], cf.TMPDIR)
-        shared.mkdir_p(params[cf.TMPDIR])
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.TMPDIR] = os.path.join(params[pyrate.constants.OUT_DIR], pyrate.constants.TMPDIR)
+        shared.mkdir_p(params[pyrate.constants.TMPDIR])
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.REF_EST_METHOD] = 2
+        params[pyrate.constants.REF_EST_METHOD] = 2
 
-        xlks, _, crop = cf.transform_params(params)
+        xlks, _, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST], params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST], params[
+            pyrate.constants.OBS_DIR])
         
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop, params, xlks)
         print(f"base_ifg_paths={base_ifg_paths}") 
         print(f"dest_paths={dest_paths}")
         # start run_pyrate copy
@@ -122,16 +126,16 @@ class LegacyEqualityTest(unittest.TestCase):
             ifg.open()
         
         # Calculate linear rate map
-        params[cf.PARALLEL] = 1
+        params[pyrate.constants.PARALLEL] = 1
         cls.rate, cls.error, cls.samples = tests.common.calculate_linear_rate(
             ifgs, params, vcmt, mst_mat=mst_grid)
 
-        params[cf.PARALLEL] = 2
+        params[pyrate.constants.PARALLEL] = 2
         cls.rate_2, cls.error_2, cls.samples_2 = \
             tests.common.calculate_linear_rate(ifgs, params, vcmt,
                                                mst_mat=mst_grid)
 
-        params[cf.PARALLEL] = 0
+        params[pyrate.constants.PARALLEL] = 0
         # Calculate linear rate map
         cls.rate_s, cls.error_s, cls.samples_s = \
             tests.common.calculate_linear_rate(ifgs, params, vcmt,
@@ -154,7 +158,7 @@ class LegacyEqualityTest(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.temp_out_dir)
         params = cf.get_config_params(TEST_CONF_ROIPAC)
-        remove_tifs(params[cf.OBS_DIR])
+        remove_tifs(params[pyrate.constants.OBS_DIR])
 
     def test_linear_rate_full_parallel(self):
         """

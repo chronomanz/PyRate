@@ -27,16 +27,17 @@ import tempfile
 import random
 import string
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.orbital
 import pyrate.core.shared
-import tests.common
+import pyrate.process
 from pyrate import (
-    process, prepifg, merge, conv2tif)
-from tests.common import (small_data_setup, reconstruct_mst, 
-    reconstruct_linrate, SML_TEST_DEM_HDR_GAMMA, pre_prepare_ifgs)
+    process, prepifg, conv2tif, configuration as cf)
 from tests import common
 from tests.test_covariance import legacy_maxvar
-from pyrate.core import algorithm, ref_phs_est as rpe, mpiops, config as cf, covariance, refpixel
+from pyrate.core import mpiops
 
 TRAVIS = True if 'TRAVIS' in os.environ else False
 
@@ -114,16 +115,16 @@ def col_splits(request):
 def modify_config(request, tempdir, get_config):
     test_conf = common.TEST_CONF_ROIPAC
     params_dict = get_config(test_conf)
-    params_dict[cf.IFG_LKSX] = request.param
-    params_dict[cf.IFG_LKSY] = request.param
-    params_dict[cf.OBS_DIR] = tempdir()
-    common.copytree(common.SML_TEST_GAMMA, params_dict[cf.OBS_DIR])
-    params_dict[cf.IFG_FILE_LIST] = os.path.join(params_dict[cf.OBS_DIR], 'ifms_17')
-    params_dict[cf.PARALLEL] = False
-    params_dict[cf.APS_CORRECTION] = 0
+    params_dict[pyrate.constants.IFG_LKSX] = request.param
+    params_dict[pyrate.constants.IFG_LKSY] = request.param
+    params_dict[pyrate.constants.OBS_DIR] = tempdir()
+    common.copytree(common.SML_TEST_GAMMA, params_dict[pyrate.constants.OBS_DIR])
+    params_dict[pyrate.constants.IFG_FILE_LIST] = os.path.join(params_dict[pyrate.constants.OBS_DIR], 'ifms_17')
+    params_dict[pyrate.constants.PARALLEL] = False
+    params_dict[pyrate.constants.APS_CORRECTION] = 0
     yield params_dict
     # clean up
-    shutil.rmtree(params_dict[cf.OBS_DIR])
+    shutil.rmtree(params_dict[pyrate.constants.OBS_DIR])
 
 
 @pytest.fixture(params=range(1, 6))
@@ -147,12 +148,13 @@ def test_vcm_legacy_vs_mpi(mpisync, tempdir, get_config):
     else:
         outdir = None
     outdir = mpiops.comm.bcast(outdir, root=0)
-    params_dict[cf.OUT_DIR] = outdir
-    params_dict[cf.PARALLEL] = False
-    xlks, ylks, crop = cf.transform_params(params_dict)
-    base_unw_paths = pyrate.core.shared.original_ifg_paths(params_dict[cf.IFG_FILE_LIST], params_dict[cf.OBS_DIR])
+    params_dict[pyrate.constants.OUT_DIR] = outdir
+    params_dict[pyrate.constants.PARALLEL] = False
+    xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
+    base_unw_paths = pyrate.core.shared.original_ifg_paths(params_dict[pyrate.constants.IFG_FILE_LIST], params_dict[
+        pyrate.constants.OBS_DIR])
     # dest_paths are tifs that have been geotif converted and multilooked
-    dest_paths = cf.get_dest_paths(base_unw_paths, crop, params_dict, xlks)
+    dest_paths = pyrate.configuration.get_dest_paths(base_unw_paths, crop, params_dict, xlks)
 
     # run prepifg, create the dest_paths files
     if mpiops.rank == 0:
@@ -161,7 +163,7 @@ def test_vcm_legacy_vs_mpi(mpisync, tempdir, get_config):
 
     mpiops.comm.barrier()
 
-    tiles = pyrate.core.shared.get_tiles(dest_paths[0], rows=1, cols=1)
+    tiles = pyrate.process.get_tiles(dest_paths[0], rows=1, cols=1)
     preread_ifgs = process._create_ifg_dict(dest_paths, params=params_dict, tiles=tiles)
     refpx, refpy = process._ref_pixel_calc(dest_paths, params_dict)
     process._orb_fit_calc(dest_paths, params_dict)
@@ -172,7 +174,7 @@ def test_vcm_legacy_vs_mpi(mpisync, tempdir, get_config):
     np.testing.assert_array_almost_equal(legacy_vcm, vcmt, decimal=3)
     if mpiops.rank == 0:
         shutil.rmtree(outdir)
-        common.remove_tifs(params_dict[cf.OBS_DIR])
+        common.remove_tifs(params_dict[pyrate.constants.OBS_DIR])
 
 
 @pytest.fixture(params=[1, 2, 5])
@@ -180,12 +182,12 @@ def orbfit_lks(request):
     return request.param
 
 
-@pytest.fixture(params=[cf.INDEPENDENT_METHOD, cf.NETWORK_METHOD])
+@pytest.fixture(params=[pyrate.constants.INDEPENDENT_METHOD, pyrate.constants.NETWORK_METHOD])
 def orbfit_method(request):
     return request.param
 
 
-@pytest.fixture(params=[cf.PLANAR, cf.QUADRATIC, cf.PART_CUBIC])
+@pytest.fixture(params=[pyrate.constants.PLANAR, pyrate.constants.QUADRATIC, pyrate.constants.PART_CUBIC])
 def orbfit_degrees(request):
     return request.param
 
@@ -204,28 +206,28 @@ def test_prepifg_mpi(mpisync, get_config, tempdir,
     else:
         params = get_config(TEST_CONF_ROIPAC)
     outdir = mpiops.run_once(tempdir)
-    params[cf.OUT_DIR] = outdir
-    params[cf.PARALLEL] = False
-    params[cf.IFG_LKSX], params[cf.IFG_LKSY] = get_lks, get_lks
-    params[cf.IFG_CROP_OPT] = get_crop
+    params[pyrate.constants.OUT_DIR] = outdir
+    params[pyrate.constants.PARALLEL] = False
+    params[pyrate.constants.IFG_LKSX], params[pyrate.constants.IFG_LKSY] = get_lks, get_lks
+    params[pyrate.constants.IFG_CROP_OPT] = get_crop
     if roipac_or_gamma == 1:
-        params[cf.IFG_FILE_LIST] = join(common.SML_TEST_GAMMA, 'ifms_17')
-        params[cf.OBS_DIR] = common.SML_TEST_GAMMA
-        params[cf.DEM_FILE] = common.SML_TEST_DEM_GAMMA
-        params[cf.DEM_HEADER_FILE] = common.SML_TEST_DEM_HDR_GAMMA
+        params[pyrate.constants.IFG_FILE_LIST] = join(common.SML_TEST_GAMMA, 'ifms_17')
+        params[pyrate.constants.OBS_DIR] = common.SML_TEST_GAMMA
+        params[pyrate.constants.DEM_FILE] = common.SML_TEST_DEM_GAMMA
+        params[pyrate.constants.DEM_HEADER_FILE] = common.SML_TEST_DEM_HDR_GAMMA
     conv2tif.main(params)
     prepifg.main(params)
-    common.remove_tifs(params[cf.OBS_DIR])    
+    common.remove_tifs(params[pyrate.constants.OBS_DIR])
 
     if mpiops.rank == 0:
         if roipac_or_gamma == 1:
             params_s = get_config(TEST_CONF_GAMMA)
         else:
             params_s = get_config(TEST_CONF_ROIPAC)
-        params_s[cf.OUT_DIR] = tempdir()
-        params_s[cf.PARALLEL] = True
-        params_s[cf.IFG_LKSX], params_s[cf.IFG_LKSY] = get_lks, get_lks
-        params_s[cf.IFG_CROP_OPT] = get_crop
+        params_s[pyrate.constants.OUT_DIR] = tempdir()
+        params_s[pyrate.constants.PARALLEL] = True
+        params_s[pyrate.constants.IFG_LKSX], params_s[pyrate.constants.IFG_LKSY] = get_lks, get_lks
+        params_s[pyrate.constants.IFG_CROP_OPT] = get_crop
         conv2tif.main(params)
         if roipac_or_gamma == 1:
             base_unw_paths = glob.glob(join(common.SML_TEST_GAMMA,
@@ -236,7 +238,7 @@ def test_prepifg_mpi(mpisync, get_config, tempdir,
             prepifg.main(params_s)
 
         mpi_tifs = glob.glob(join(outdir, "*.tif"))
-        serial_tifs = glob.glob(join(params[cf.OUT_DIR], "*.tif"))
+        serial_tifs = glob.glob(join(params[pyrate.constants.OUT_DIR], "*.tif"))
         mpi_tifs.sort()
         serial_tifs.sort()
         # 17 geotifs, and 17 mlooked tifs
@@ -245,5 +247,5 @@ def test_prepifg_mpi(mpisync, get_config, tempdir,
             assert basename(m_f) == basename(s_f)
 
         shutil.rmtree(outdir)
-        shutil.rmtree(params_s[cf.OUT_DIR])
-        common.remove_tifs(params[cf.OBS_DIR])
+        shutil.rmtree(params_s[pyrate.constants.OUT_DIR])
+        common.remove_tifs(params[pyrate.constants.OBS_DIR])

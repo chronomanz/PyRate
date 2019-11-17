@@ -15,21 +15,22 @@
 #
 # pylint: disable=trailing-whitespace, missing-docstring
 '''
-This Python module contains tests for the config.py PyRate module.
+This Python module contains tests for the configuration.py PyRate module.
 '''
 import os
 import shutil
 import tempfile
 import unittest
-import copy
 from os.path import join
 
 import pytest
 
+import pyrate.constants
+import pyrate.core.shared
 from tests.common import SML_TEST_CONF, SML_TEST_TIF
 from tests.common import TEST_CONF_ROIPAC, TEST_CONF_GAMMA
-from pyrate.core import config
-from pyrate.core.config import (
+from pyrate import configuration
+from pyrate.configuration import (
     validate_parameters, validate_optional_parameters, validate_epochs,
     validate_obs_thresholds, validate_ifgs, validate_gamma_headers,
     validate_coherence_files, validate_tifs_exist, validate_minimum_epochs, 
@@ -38,80 +39,33 @@ from pyrate.core.config import (
     validate_reference_pixel_search_windows,
     validate_multilook_parameters,
     validate_prepifg_tifs_exist,
-    _get_temporal_info, _get_prepifg_info, _get_fullres_info)
-from pyrate.core.config import (
-    SIXTEEN_DIGIT_EPOCH_PAIR,
-    TWELVE_DIGIT_EPOCH_PAIR,
-    EIGHT_DIGIT_EPOCH,
+    _get_temporal_info, _get_prepifg_info)
+from pyrate.configuration import (
     _COHERENCE_VALIDATION,
     _ORBITAL_FIT_VALIDATION,
     _APSEST_VALIDATION,
     _TIME_SERIES_VALIDATION,
     _PARAM_VALIDATION,
     _GAMMA_VALIDATION,
-    DEM_HEADER_FILE,
-    NO_DATA_VALUE,
-    OBS_DIR,
-    IFG_FILE_LIST,
-    PROCESSOR,
-    OUT_DIR,
-    SLC_DIR,
-    SLC_FILE_LIST,
-    COH_MASK,
-    COH_THRESH,
-    COH_FILE_DIR,
-    COH_FILE_LIST,
-    IFG_LKSX,
-    IFG_LKSY,
-    IFG_CROP_OPT,
-    IFG_XFIRST, IFG_XLAST,
-    IFG_YFIRST, IFG_YLAST,
-    REFX, REFY,
-    REFNX,
-    REFNY,
-    REF_CHIP_SIZE,
-    REF_MIN_FRAC,
-    ORBITAL_FIT,
-    ORBITAL_FIT_METHOD,
-    ORBITAL_FIT_DEGREE,
-    ORBITAL_FIT_LOOKS_X,
-    ORBITAL_FIT_LOOKS_Y,
-    LR_NSIG,
-    LR_MAXSIG,
-    LR_PTHRESH,
-    APSEST,
-    TLPF_METHOD,
-    TLPF_CUTOFF,
-    TLPF_PTHR,
-    SLPF_METHOD,
-    SLPF_CUTOFF,
-    SLPF_ORDER,
-    SLPF_NANFILL,
-    TIME_SERIES_CAL,
-    TIME_SERIES_PTHRESH,
-    TIME_SERIES_SM_FACTOR,
-    TIME_SERIES_SM_ORDER,
-    TIME_SERIES_METHOD,
-    PARALLEL,
-    PROCESSES,
-    NAN_CONVERSION,
-    NO_DATA_AVERAGING_THRESHOLD,
-    DEM_FILE,
-    APS_INCIDENCE_MAP,
-    APS_ELEVATION_MAP,
-    APS_METHOD,
-    APS_CORRECTION,
     ConfigException)
+from pyrate.constants import SIXTEEN_DIGIT_EPOCH_PAIR, TWELVE_DIGIT_EPOCH_PAIR, EIGHT_DIGIT_EPOCH, IFG_FILE_LIST, \
+    PROCESSOR, OBS_DIR, OUT_DIR, DEM_FILE, DEM_HEADER_FILE, SLC_DIR, SLC_FILE_LIST, NO_DATA_VALUE, \
+    NO_DATA_AVERAGING_THRESHOLD, NAN_CONVERSION, IFG_CROP_OPT, IFG_LKSX, IFG_LKSY, IFG_XFIRST, IFG_XLAST, IFG_YFIRST, \
+    IFG_YLAST, REFX, REFY, REFNX, REFNY, REF_CHIP_SIZE, COH_MASK, COH_THRESH, COH_FILE_DIR, COH_FILE_LIST, \
+    APS_CORRECTION, APS_METHOD, APS_INCIDENCE_MAP, APS_ELEVATION_MAP, ORBITAL_FIT, ORBITAL_FIT_METHOD, \
+    ORBITAL_FIT_DEGREE, ORBITAL_FIT_LOOKS_X, ORBITAL_FIT_LOOKS_Y, LR_NSIG, LR_PTHRESH, LR_MAXSIG, APSEST, TLPF_METHOD, \
+    TLPF_CUTOFF, TLPF_PTHR, SLPF_METHOD, SLPF_CUTOFF, SLPF_ORDER, SLPF_NANFILL, TIME_SERIES_CAL, TIME_SERIES_METHOD, \
+    TIME_SERIES_PTHRESH, TIME_SERIES_SM_ORDER, TIME_SERIES_SM_FACTOR, PARALLEL, PROCESSES
 # from pyrate.tasks.utils import DUMMY_SECTION_NAME
 from tests import common
 DUMMY_SECTION_NAME = 'pyrate'
 
 class ValidateTestConfig(unittest.TestCase):
     def test_gamma_conf_passes(self):
-        config.get_config_params(TEST_CONF_GAMMA)
+        configuration.get_config_params(TEST_CONF_GAMMA)
         
     def test_roipac_conf_passes(self):
-        config.get_config_params(TEST_CONF_ROIPAC)
+        configuration.get_config_params(TEST_CONF_ROIPAC)
 
 class TestConfigValidation(unittest.TestCase):
     def setUp(self):
@@ -119,8 +73,8 @@ class TestConfigValidation(unittest.TestCase):
         Get a copy of the GAMMA params and also use this to verify that 
         they are correct before we start testing.
         """
-        self.params = config.get_config_params(TEST_CONF_GAMMA)  
-        self.roipac_params = config.get_config_params(TEST_CONF_ROIPAC)
+        self.params = configuration.get_config_params(TEST_CONF_GAMMA)
+        self.roipac_params = configuration.get_config_params(TEST_CONF_ROIPAC)
         self.dummy_dir = '/i/should/not/exist/'
         if os.path.exists(self.dummy_dir):
             raise IOError("'dummy_dir' needs to be non-existant for testing.")
@@ -453,7 +407,7 @@ class TestConfigValidationWithFullResGeotiffs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from pyrate import conv2tif
-        cls.params = config.get_config_params(TEST_CONF_GAMMA)
+        cls.params = configuration.get_config_params(TEST_CONF_GAMMA)
         conv2tif.main(cls.params)
     
     @classmethod
@@ -461,14 +415,14 @@ class TestConfigValidationWithFullResGeotiffs(unittest.TestCase):
         common.remove_tifs(cls.params[OBS_DIR])
         
     def setUp(self):
-        self.params = config.get_config_params(TEST_CONF_GAMMA,
+        self.params = configuration.get_config_params(TEST_CONF_GAMMA,
                                                'prepifg')
         self.dummy_dir = '/i/should/not/exist'
-        crop_opts = config._crop_opts(self.params)
+        crop_opts = configuration._crop_opts(self.params)
         self.min_extents, self.n_cols, self.n_rows = \
-            config._get_fullres_info(self.params[IFG_FILE_LIST],
-                                     self.params[OBS_DIR],
-                                     crop_opts)
+            configuration._get_fullres_info(self.params[IFG_FILE_LIST],
+                                            self.params[OBS_DIR],
+                                            crop_opts)
         if os.path.exists(self.dummy_dir):
             raise IOError("{dummy_dir} needs to not exist for test purposes.")
     
@@ -510,7 +464,7 @@ class TestConfigValidationWithPrepifgGeotiffs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from pyrate import conv2tif, prepifg
-        cls.params = config.get_config_params(TEST_CONF_GAMMA)
+        cls.params = configuration.get_config_params(TEST_CONF_GAMMA)
         conv2tif.main(cls.params)
         prepifg.main(cls.params)
     
@@ -520,10 +474,10 @@ class TestConfigValidationWithPrepifgGeotiffs(unittest.TestCase):
         common.remove_tifs(cls.params[OUT_DIR])
         
     def setUp(self):
-        self.params = config.get_config_params(TEST_CONF_GAMMA,
+        self.params = configuration.get_config_params(TEST_CONF_GAMMA,
                                                'process')
         self.dummy_dir = '/i/should/not/exist'
-        crop_opts = config._crop_opts(self.params)
+        crop_opts = configuration._crop_opts(self.params)
         self.extents, self.n_cols, self.n_rows, _ = \
             _get_prepifg_info(self.params[IFG_FILE_LIST], self.params[OBS_DIR], 
                               self.params)
@@ -590,7 +544,7 @@ class ConfigTest(unittest.TestCase):
 
     @staticmethod
     def test_read_param_file():
-        params = config.get_config_params(TEST_CONF_ROIPAC)
+        params = configuration.get_config_params(TEST_CONF_ROIPAC)
         for k in params.keys():
             assert k and len(k) > 1
             assert params[k] != ''
@@ -600,7 +554,7 @@ class ConfigTest(unittest.TestCase):
     def test_read_param_file_missing_option():
         # ensure the parser can handle missing option fields
         conf_path = join(SML_TEST_CONF, 'pyrate1.conf')
-        params = config.get_config_params(conf_path)
+        params = configuration.get_config_params(conf_path)
 
         assert params[REFX] == -1
         assert params[REFY] == -1
@@ -609,7 +563,7 @@ class ConfigTest(unittest.TestCase):
     def test_read_param_file_missing_value():
         # ensure the parser can handle blank option values
         conf_path = join(SML_TEST_CONF, 'pyrate2.conf')
-        params = config.get_config_params(conf_path)
+        params = configuration.get_config_params(conf_path)
 
         assert params[REFX] == -1
         assert params[REFY] == -1
@@ -617,7 +571,7 @@ class ConfigTest(unittest.TestCase):
     @staticmethod
     def test_parse_namelist():
         nl = join(SML_TEST_TIF, 'ifms_17')
-        result = list(config.parse_namelist(nl))
+        result = list(pyrate.core.shared.parse_namelist(nl))
         assert len(result) == 17
         files = ["geo_060619-061002_unw.tif", "geo_060828-061211_unw.tif",
                     "geo_061002-070430_unw.tif", "geo_070115-070917_unw.tif",
@@ -630,30 +584,30 @@ class ConfigTest(unittest.TestCase):
 class ConfigAPSParametersTest(unittest.TestCase):
     def setUp(self):
         self.conf_path = TEST_CONF_ROIPAC
-        self.params = config.get_config_params(self.conf_path)
+        self.params = configuration.get_config_params(self.conf_path)
 
     def test_incidence_and_elevation_keys_exist(self):
-        self.assertIn(config.APS_INCIDENCE_MAP, self.params.keys())
-        self.assertIn(config.APS_ELEVATION_MAP, self.params.keys())
+        self.assertIn(pyrate.constants.APS_INCIDENCE_MAP, self.params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, self.params.keys())
 
     def test_elevation_ext_should_not_exist(self):
-        self.assertIn(config.APS_ELEVATION_EXT, self.params.keys())
-        self.assertIn(config.APS_ELEVATION_MAP, self.params.keys())
-        self.assertIn(config.APS_ELEVATION_MAP, self.params.keys())
-        self.assertIsNone(self.params[config.APS_ELEVATION_MAP])
+        self.assertIn(pyrate.constants.APS_ELEVATION_EXT, self.params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, self.params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, self.params.keys())
+        self.assertIsNone(self.params[pyrate.constants.APS_ELEVATION_MAP])
 
     def test_impedance_ext_should_exist(self):
-        self.assertIn(config.APS_INCIDENCE_EXT, self.params.keys())
+        self.assertIn(pyrate.constants.APS_INCIDENCE_EXT, self.params.keys())
 
     def test_elevation_ext_keys_exist(self):
-        self.assertIn(config.APS_INCIDENCE_EXT, self.params.keys())
-        self.assertIn(config.APS_ELEVATION_EXT, self.params.keys())
-        self.assertIn(config.APS_ELEVATION_MAP, self.params.keys())
+        self.assertIn(pyrate.constants.APS_INCIDENCE_EXT, self.params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_EXT, self.params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, self.params.keys())
 
     def test_elevation_and_incidence_both_cant_have_values(self):
-        self.assertIsNotNone(self.params[config.APS_INCIDENCE_MAP])
-        self.assertIsNotNone(self.params[config.APS_INCIDENCE_EXT])
-        self.assertIsNone(self.params[config.APS_ELEVATION_MAP])
+        self.assertIsNotNone(self.params[pyrate.constants.APS_INCIDENCE_MAP])
+        self.assertIsNotNone(self.params[pyrate.constants.APS_INCIDENCE_EXT])
+        self.assertIsNone(self.params[pyrate.constants.APS_ELEVATION_MAP])
 
 
 class TestOneIncidenceOrElevationMap(unittest.TestCase):
@@ -692,34 +646,34 @@ class TestOneIncidenceOrElevationMap(unittest.TestCase):
     def test_inc_vs_ele_maps_inc_provided(self):
         self.make_input_files(inc=common.SML_TEST_INCIDENCE)
         assert os.path.exists(self.conf_file)
-        params = config.get_config_params(self.conf_file)
+        params = configuration.get_config_params(self.conf_file)
         # incidence variables
-        self.assertIn(config.APS_INCIDENCE_MAP, params.keys())
-        self.assertIn(config.APS_INCIDENCE_EXT, params.keys())
-        self.assertIsNotNone(params[config.APS_INCIDENCE_MAP])
-        self.assertIsNotNone(params[config.APS_INCIDENCE_EXT])
+        self.assertIn(pyrate.constants.APS_INCIDENCE_MAP, params.keys())
+        self.assertIn(pyrate.constants.APS_INCIDENCE_EXT, params.keys())
+        self.assertIsNotNone(params[pyrate.constants.APS_INCIDENCE_MAP])
+        self.assertIsNotNone(params[pyrate.constants.APS_INCIDENCE_EXT])
 
         # elevation variables
-        self.assertIn(config.APS_ELEVATION_MAP, params.keys())
-        self.assertIsNone(params[config.APS_ELEVATION_MAP])
-        self.assertIn(config.APS_ELEVATION_EXT, params.keys())
-        self.assertIn(config.APS_ELEVATION_MAP, params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, params.keys())
+        self.assertIsNone(params[pyrate.constants.APS_ELEVATION_MAP])
+        self.assertIn(pyrate.constants.APS_ELEVATION_EXT, params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, params.keys())
 
     def test_inc_vs_ele_maps_ele_provided(self):
         self.make_input_files(ele=common.SML_TEST_ELEVATION)
         assert os.path.exists(self.conf_file)
-        params = config.get_config_params(self.conf_file)
+        params = configuration.get_config_params(self.conf_file)
         # incidence variables
-        self.assertIn(config.APS_INCIDENCE_MAP, params.keys())
-        self.assertIn(config.APS_INCIDENCE_EXT, params.keys())
-        self.assertIsNone(params[config.APS_INCIDENCE_MAP])
-        self.assertIsNone(params[config.APS_INCIDENCE_EXT])
+        self.assertIn(pyrate.constants.APS_INCIDENCE_MAP, params.keys())
+        self.assertIn(pyrate.constants.APS_INCIDENCE_EXT, params.keys())
+        self.assertIsNone(params[pyrate.constants.APS_INCIDENCE_MAP])
+        self.assertIsNone(params[pyrate.constants.APS_INCIDENCE_EXT])
 
         # elevation variables
-        self.assertIn(config.APS_ELEVATION_MAP, params.keys())
-        self.assertIsNotNone(params[config.APS_ELEVATION_MAP])
-        self.assertIn(config.APS_ELEVATION_EXT, params.keys())
-        self.assertIn(config.APS_ELEVATION_MAP, params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, params.keys())
+        self.assertIsNotNone(params[pyrate.constants.APS_ELEVATION_MAP])
+        self.assertIn(pyrate.constants.APS_ELEVATION_EXT, params.keys())
+        self.assertIn(pyrate.constants.APS_ELEVATION_MAP, params.keys())
 
 
 if __name__ == "__main__":

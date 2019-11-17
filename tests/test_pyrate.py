@@ -25,9 +25,13 @@ import unittest
 from os.path import join
 import numpy as np
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.shared
-from pyrate.core import shared, config as cf, config, prepifg_helper, mst
-from pyrate import process, prepifg, conv2tif
+import pyrate.process
+from pyrate.core import shared, config as cf, prepifg_helper, mst
+from pyrate import process, prepifg, conv2tif, configuration
 from tests import common
 
 # taken from
@@ -50,18 +54,18 @@ CURRENT_DIR = os.getcwd()
 
 
 def test_transform_params():
-    params = {config.IFG_LKSX: 3, config.IFG_LKSY: 2, config.IFG_CROP_OPT: 1}
-    assert cf.transform_params(params) == (3, 2, 1)
+    params = {pyrate.constants.IFG_LKSX: 3, pyrate.constants.IFG_LKSY: 2, pyrate.constants.IFG_CROP_OPT: 1}
+    assert (params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]) == (3, 2, 1)
 
 
 def test_warp_required():
-    nocrop = prepifg_helper.ALREADY_SAME_SIZE
+    nocrop = pyrate.constants.ALREADY_SAME_SIZE
     assert shared.warp_required(xlooks=2, ylooks=1, crop=nocrop)
     assert shared.warp_required(xlooks=1, ylooks=2, crop=nocrop)
     assert shared.warp_required(xlooks=1, ylooks=1, crop=nocrop)
     assert not shared.warp_required(xlooks=1, ylooks=1, crop=None)
 
-    for c in prepifg_helper.CROP_OPTIONS[:-1]:
+    for c in pyrate.constants.CROP_OPTIONS[:-1]:
         assert shared.warp_required(xlooks=1, ylooks=1, crop=c)
 
 
@@ -130,13 +134,13 @@ class PyRateTests(unittest.TestCase):
 
             # Turn off validation because we're in a different working dir
             #  and relative paths in config won't be work.
-            params = config.get_config_params(common.TEST_CONF_ROIPAC,
-                                               validate=False)
-            params[cf.OUT_DIR] = cls.BASE_OUT_DIR
-            params[cf.PROCESSOR] = 0  # roipac
-            params[cf.APS_CORRECTION] = 0
+            params = configuration.get_config_params(common.TEST_CONF_ROIPAC,
+                                                     validate=False)
+            params[pyrate.constants.OUT_DIR] = cls.BASE_OUT_DIR
+            params[pyrate.constants.PROCESSOR] = 0  # roipac
+            params[pyrate.constants.APS_CORRECTION] = 0
             paths = glob.glob(join(cls.BASE_OUT_DIR, 'geo_*-*.tif'))
-            params[cf.PARALLEL] = False
+            params[pyrate.constants.PARALLEL] = False
             process.main(sorted(paths), params, 2, 2)
 
             if not hasattr(cls, 'ifgs'):
@@ -196,47 +200,47 @@ class ParallelPyRateTests(unittest.TestCase):
 
         # change the required params
         params = cf.get_config_params(cls.test_conf)
-        params[cf.OBS_DIR] = common.SML_TEST_GAMMA
-        params[cf.PROCESSOR] = 1  # gamma
-        params[cf.IFG_FILE_LIST] = os.path.join(
+        params[pyrate.constants.OBS_DIR] = common.SML_TEST_GAMMA
+        params[pyrate.constants.PROCESSOR] = 1  # gamma
+        params[pyrate.constants.IFG_FILE_LIST] = os.path.join(
             common.SML_TEST_GAMMA, 'ifms_17')
-        params[cf.OUT_DIR] = cls.tif_dir
-        params[cf.PARALLEL] = 1
-        params[cf.APS_CORRECTION] = False
-        params[cf.TMPDIR] = os.path.join(params[cf.OUT_DIR], cf.TMPDIR)
+        params[pyrate.constants.OUT_DIR] = cls.tif_dir
+        params[pyrate.constants.PARALLEL] = 1
+        params[pyrate.constants.APS_CORRECTION] = False
+        params[pyrate.constants.TMPDIR] = os.path.join(params[pyrate.constants.OUT_DIR], pyrate.constants.TMPDIR)
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        # base_unw_paths need to be geotiffed by converttogeotif 
+        # ifgs_paths need to be geotiffed by converttogeotif
         #  and multilooked by run_prepifg
-        base_unw_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_unw_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
 
         # dest_paths are tifs that have been geotif converted and multilooked
-        cls.dest_paths = cf.get_dest_paths(
+        cls.dest_paths = pyrate.configuration.get_dest_paths(
             base_unw_paths, crop, params, xlks)
         gtif_paths = conv2tif.do_geotiff(base_unw_paths, params)
         prepifg.do_prepifg(gtif_paths, params)
-        tiles = pyrate.core.shared.get_tiles(cls.dest_paths[0], 3, 3)
+        tiles = pyrate.process.get_tiles(cls.dest_paths[0], 3, 3)
         ifgs = common.small_data_setup()
         cls.refpixel_p, cls.maxvar_p, cls.vcmt_p = \
             process.main(cls.dest_paths, params, 3, 3)
         cls.mst_p = common.reconstruct_mst(ifgs[0].shape, tiles,
-                                           params[cf.TMPDIR])
+                                           params[pyrate.constants.TMPDIR])
         cls.rate_p, cls.error_p, cls.samples_p = [
             common.reconstruct_linrate(
-                ifgs[0].shape, tiles, params[cf.TMPDIR], t)
+                ifgs[0].shape, tiles, params[pyrate.constants.TMPDIR], t)
             for t in rate_types
             ]
         
-        common.remove_tifs(params[cf.OBS_DIR])
+        common.remove_tifs(params[pyrate.constants.OBS_DIR])
 
         # now create the non parallel version
         cls.tif_dir_s = tempfile.mkdtemp()
-        params[cf.PARALLEL] = 0
-        params[cf.OUT_DIR] = cls.tif_dir_s
-        params[cf.TMPDIR] = os.path.join(params[cf.OUT_DIR], cf.TMPDIR)
-        cls.dest_paths_s = cf.get_dest_paths(
+        params[pyrate.constants.PARALLEL] = 0
+        params[pyrate.constants.OUT_DIR] = cls.tif_dir_s
+        params[pyrate.constants.TMPDIR] = os.path.join(params[pyrate.constants.OUT_DIR], pyrate.constants.TMPDIR)
+        cls.dest_paths_s = pyrate.configuration.get_dest_paths(
             base_unw_paths, crop, params, xlks)
         gtif_paths = conv2tif.do_geotiff(base_unw_paths, params)
         prepifg.do_prepifg(gtif_paths, params)
@@ -244,10 +248,10 @@ class ParallelPyRateTests(unittest.TestCase):
             process.main(cls.dest_paths_s, params, 3, 3)
 
         cls.mst = common.reconstruct_mst(ifgs[0].shape, tiles,
-                                         params[cf.TMPDIR])
+                                         params[pyrate.constants.TMPDIR])
         cls.rate, cls.error, cls.samples = [
             common.reconstruct_linrate(
-                ifgs[0].shape, tiles, params[cf.TMPDIR], t)
+                ifgs[0].shape, tiles, params[pyrate.constants.TMPDIR], t)
             for t in rate_types
             ]
 
@@ -255,7 +259,7 @@ class ParallelPyRateTests(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.tif_dir, ignore_errors=True)
         shutil.rmtree(cls.tif_dir_s, ignore_errors=True)
-        common.remove_tifs(cf.get_config_params(cls.test_conf)[cf.OBS_DIR])
+        common.remove_tifs(cf.get_config_params(cls.test_conf)[pyrate.constants.OBS_DIR])
 
     def test_orbital_correction(self):
         key = 'ORBITAL_ERROR'
@@ -310,7 +314,7 @@ class TestPrePrepareIfgs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        params = config.get_config_params(common.TEST_CONF_ROIPAC)
+        params = configuration.get_config_params(common.TEST_CONF_ROIPAC)
         cls.tmp_dir = tempfile.mkdtemp()
         common.copytree(common.SML_TEST_TIF, cls.tmp_dir)
         tifs = glob.glob(os.path.join(cls.tmp_dir, "*.tif"))
@@ -323,7 +327,7 @@ class TestPrePrepareIfgs(unittest.TestCase):
         for i in cls.ifg_ret:
             i.close()
 
-        nan_conversion = params[cf.NAN_CONVERSION]
+        nan_conversion = params[pyrate.constants.NAN_CONVERSION]
 
         # prepare a second set
         cls.tmp_dir2 = tempfile.mkdtemp()
@@ -340,7 +344,7 @@ class TestPrePrepareIfgs(unittest.TestCase):
             if not i.is_open:
                 i.open(readonly=False)
             if nan_conversion:  # nan conversion happens here in networkx mst
-                i.nodata_value = params[cf.NO_DATA_VALUE]
+                i.nodata_value = params[pyrate.constants.NO_DATA_VALUE]
                 i.convert_to_nans()
             if not i.mm_converted:
                 i.convert_to_mm()

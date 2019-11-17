@@ -27,23 +27,26 @@ from numpy import nan, asarray, where
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.orbital
 import pyrate.core.shared
 import tests.common as common
-from pyrate.core import ref_phs_est as rpe, config as cf, mst, covariance
-from pyrate import process, prepifg, conv2tif
+from pyrate.core import mst, covariance
+from pyrate import process, prepifg, conv2tif, configuration as cf
 from pyrate.core.timeseries import time_series
 
 
 def default_params():
-    return {cf.TIME_SERIES_METHOD: 1,
-            cf.TIME_SERIES_PTHRESH: 0,
-            cf.TIME_SERIES_SM_ORDER: 2,
-            cf.TIME_SERIES_SM_FACTOR: -0.25,
-            cf.PARALLEL: 0,
-            cf.PROCESSES: 1,
-            cf.NAN_CONVERSION: 1,
-            cf.NO_DATA_VALUE: 0}
+    return {pyrate.constants.TIME_SERIES_METHOD: 1,
+            pyrate.constants.TIME_SERIES_PTHRESH: 0,
+            pyrate.constants.TIME_SERIES_SM_ORDER: 2,
+            pyrate.constants.TIME_SERIES_SM_FACTOR: -0.25,
+            pyrate.constants.PARALLEL: 0,
+            pyrate.constants.PROCESSES: 1,
+            pyrate.constants.NAN_CONVERSION: 1,
+            pyrate.constants.NO_DATA_VALUE: 0}
 
 
 class SinglePixelIfg(object):
@@ -114,18 +117,18 @@ class LegacyTimeSeriesEquality(unittest.TestCase):
         params = cf.get_config_params(common.TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', common.TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.REF_EST_METHOD] = 2
+        params[pyrate.constants.REF_EST_METHOD] = 2
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
 
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop, params, xlks)
         # start run_pyrate copy
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
         mst_grid = common.mst_calculation(dest_paths, params)
@@ -150,17 +153,17 @@ class LegacyTimeSeriesEquality(unittest.TestCase):
             ifg.open()
             ifg.nodata_value = 0.0        
 
-        params[cf.TIME_SERIES_METHOD] = 1
-        params[cf.PARALLEL] = 0
+        params[pyrate.constants.TIME_SERIES_METHOD] = 1
+        params[pyrate.constants.PARALLEL] = 0
         # Calculate time series
         cls.tsincr_0, cls.tscum_0, _ = common.calculate_time_series(
             ifgs, params, vcmt, mst=mst_grid)
 
-        params[cf.PARALLEL] = 1
+        params[pyrate.constants.PARALLEL] = 1
         cls.tsincr_1, cls.tscum_1, cls.tsvel_1 = \
             common.calculate_time_series(ifgs, params, vcmt, mst=mst_grid)
 
-        params[cf.PARALLEL] = 2
+        params[pyrate.constants.PARALLEL] = 2
         cls.tsincr_2, cls.tscum_2, cls.tsvel_2 = \
             common.calculate_time_series(ifgs, params, vcmt, mst=mst_grid)
 
@@ -181,7 +184,7 @@ class LegacyTimeSeriesEquality(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.temp_out_dir)
         common.remove_tifs(
-            cf.get_config_params(common.TEST_CONF_ROIPAC)[cf.OBS_DIR])
+            cf.get_config_params(common.TEST_CONF_ROIPAC)[pyrate.constants.OBS_DIR])
 
     def test_time_series_equality_parallel_by_rows(self):
         """
@@ -231,18 +234,18 @@ class LegacyTimeSeriesEqualityMethod2Interp0(unittest.TestCase):
         params = cf.get_config_params(common.TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', common.TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.REF_EST_METHOD] = 2
+        params[pyrate.constants.REF_EST_METHOD] = 2
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
 
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop, params, xlks)
         # start run_pyrate copy
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
         mst_grid = common.mst_calculation(dest_paths, params)
@@ -268,19 +271,19 @@ class LegacyTimeSeriesEqualityMethod2Interp0(unittest.TestCase):
             ifg.open()
             ifg.nodata_value = 0.0
 
-        params[cf.TIME_SERIES_METHOD] = 2
-        params[cf.PARALLEL] = 1
+        params[pyrate.constants.TIME_SERIES_METHOD] = 2
+        params[pyrate.constants.PARALLEL] = 1
         # Calculate time series
         cls.tsincr, cls.tscum, _ = common.calculate_time_series(
             ifgs, params, vcmt, mst=mst_grid)
 
-        params[cf.PARALLEL] = 2
+        params[pyrate.constants.PARALLEL] = 2
 
         # Calculate time series
         cls.tsincr_2, cls.tscum_2, _ = \
             common.calculate_time_series(ifgs, params, vcmt, mst=mst_grid)
 
-        params[cf.PARALLEL] = 0
+        params[pyrate.constants.PARALLEL] = 0
         # Calculate time series serailly by the pixel
         cls.tsincr_0, cls.tscum_0, _ = \
             common.calculate_time_series(ifgs, params, vcmt, mst=mst_grid)
@@ -304,7 +307,7 @@ class LegacyTimeSeriesEqualityMethod2Interp0(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.temp_out_dir)
         common.remove_tifs(
-            cf.get_config_params(common.TEST_CONF_ROIPAC)[cf.OBS_DIR])
+            cf.get_config_params(common.TEST_CONF_ROIPAC)[pyrate.constants.OBS_DIR])
 
     def test_time_series_equality_parallel_by_rows(self):
 

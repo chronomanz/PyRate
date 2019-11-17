@@ -31,8 +31,10 @@ from numpy.linalg import pinv, inv
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 from scipy.linalg import lstsq
 
+import pyrate.constants
 from .common import small5_mock_ifgs, MockIfg
-from pyrate.core import algorithm, config as cf
+from pyrate.core import algorithm
+from pyrate import configuration as cf
 from pyrate.core.orbital import INDEPENDENT_METHOD, NETWORK_METHOD, PLANAR, \
     QUADRATIC, PART_CUBIC
 from pyrate.core.orbital import OrbitalError, _orbital_correction
@@ -200,11 +202,11 @@ class IndependentCorrectionTests(unittest.TestCase):
         orig = array([c.phase_data.copy() for c in self.ifgs])
         exp = [self.alt_orbital_correction(i, degree, offset) for i in self.ifgs]
         params = dict()
-        params[cf.ORBITAL_FIT_METHOD] = method
-        params[cf.ORBITAL_FIT_DEGREE] = degree
-        params[cf.PARALLEL] = False
-        params[cf.NO_DATA_VALUE] = 0
-        params[cf.NAN_CONVERSION] = False
+        params[pyrate.constants.ORBITAL_FIT_METHOD] = method
+        params[pyrate.constants.ORBITAL_FIT_DEGREE] = degree
+        params[pyrate.constants.PARALLEL] = False
+        params[pyrate.constants.NO_DATA_VALUE] = 0
+        params[pyrate.constants.NAN_CONVERSION] = False
         for i in self.ifgs:
             i.mm_converted = True
         _orbital_correction(self.ifgs, params, None, offset)
@@ -267,10 +269,10 @@ class ErrorTests(unittest.TestCase):
         # test failure of a few different args for 'method'
         ifgs = small5_mock_ifgs()
         params = dict()
-        params[cf.ORBITAL_FIT_DEGREE] = PLANAR
-        params[cf.PARALLEL] = False
+        params[pyrate.constants.ORBITAL_FIT_DEGREE] = PLANAR
+        params[pyrate.constants.PARALLEL] = False
         for m in [None, 5, -1, -3, 45.8]:
-            params[cf.ORBITAL_FIT_METHOD] = m
+            params[pyrate.constants.ORBITAL_FIT_METHOD] = m
             self.assertRaises(OrbitalError, _orbital_correction, ifgs, params, None)
 
     def test_multilooked_ifgs_arg(self):
@@ -278,9 +280,9 @@ class ErrorTests(unittest.TestCase):
         ifgs = small5_mock_ifgs()
         args = [[None, None, None, None, None], ["X"] * 5]
         params = dict()
-        params[cf.ORBITAL_FIT_METHOD] = NETWORK_METHOD
-        params[cf.PARALLEL] = False
-        params[cf.ORBITAL_FIT_DEGREE] = PLANAR
+        params[pyrate.constants.ORBITAL_FIT_METHOD] = NETWORK_METHOD
+        params[pyrate.constants.PARALLEL] = False
+        params[pyrate.constants.ORBITAL_FIT_DEGREE] = PLANAR
         for a in args:
             args = (ifgs, params, a)
             self.assertRaises(OrbitalError, _orbital_correction, *args)
@@ -537,9 +539,9 @@ class NetworkCorrectionTests(unittest.TestCase):
     def verify_corrections(ifgs, exp, deg, offset):
         # checks orbital correction against unit test version
         params = dict()
-        params[cf.ORBITAL_FIT_METHOD] = NETWORK_METHOD
-        params[cf.ORBITAL_FIT_DEGREE] = deg
-        params[cf.PARALLEL] = False
+        params[pyrate.constants.ORBITAL_FIT_METHOD] = NETWORK_METHOD
+        params[pyrate.constants.ORBITAL_FIT_DEGREE] = deg
+        params[pyrate.constants.PARALLEL] = False
         _orbital_correction(ifgs, params, None, offset)
         act = [i.phase_data for i in ifgs]
         assert_array_almost_equal(act, exp, decimal=5)
@@ -600,9 +602,9 @@ class NetworkCorrectionTestsMultilooking(unittest.TestCase):
     def verify_corrections(self, ifgs, exp, deg, offset):
         # checks orbital correction against unit test version
         params = dict()
-        params[cf.ORBITAL_FIT_METHOD] = NETWORK_METHOD
-        params[cf.ORBITAL_FIT_DEGREE] = deg
-        params[cf.PARALLEL] = False
+        params[pyrate.constants.ORBITAL_FIT_METHOD] = NETWORK_METHOD
+        params[pyrate.constants.ORBITAL_FIT_DEGREE] = deg
+        params[pyrate.constants.PARALLEL] = False
         _orbital_correction(ifgs, params, self.ml_ifgs, offset)
         act = [i.phase_data for i in ifgs]
         assert_array_almost_equal(act, exp, decimal=4)
@@ -691,10 +693,10 @@ class LegacyComparisonTestsOrbfitMethod1(unittest.TestCase):
         self.BASE_DIR = tempfile.mkdtemp()
         self.params = cf.get_config_params(TEST_CONF_ROIPAC)
         # change to orbital error correction method 1
-        self.params[cf.ORBITAL_FIT_METHOD] = INDEPENDENT_METHOD
-        self.params[cf.ORBITAL_FIT_LOOKS_X] = 2
-        self.params[cf.ORBITAL_FIT_LOOKS_Y] = 2
-        self.params[cf.PARALLEL] = False
+        self.params[pyrate.constants.ORBITAL_FIT_METHOD] = INDEPENDENT_METHOD
+        self.params[pyrate.constants.ORBITAL_FIT_LOOKS_X] = 2
+        self.params[pyrate.constants.ORBITAL_FIT_LOOKS_Y] = 2
+        self.params[pyrate.constants.PARALLEL] = False
 
         data_paths = [os.path.join(SML_TEST_TIF, p) for p in IFMS16]
         self.ifg_paths = [os.path.join(self.BASE_DIR, os.path.basename(d))
@@ -758,9 +760,9 @@ class LegacyComparisonTestsOrbfitMethod2(unittest.TestCase):
         self.BASE_DIR = tempfile.mkdtemp()
         self.params = cf.get_config_params(TEST_CONF_ROIPAC)
         # change to orbital error correction method 2
-        self.params[cf.ORBITAL_FIT_METHOD] = NETWORK_METHOD
-        self.params[cf.ORBITAL_FIT_LOOKS_X] = 1
-        self.params[cf.ORBITAL_FIT_LOOKS_Y] = 1
+        self.params[pyrate.constants.ORBITAL_FIT_METHOD] = NETWORK_METHOD
+        self.params[pyrate.constants.ORBITAL_FIT_LOOKS_X] = 1
+        self.params[pyrate.constants.ORBITAL_FIT_LOOKS_Y] = 1
 
         data_paths = [os.path.join(SML_TEST_TIF, p) for p in
                       small_ifg_file_list()]
@@ -820,9 +822,9 @@ class LegacyComparisonTestsOrbfitMethod2(unittest.TestCase):
         does not test anything except that the method is working
         """
         # change to orbital error correction method 2
-        self.params[cf.ORBITAL_FIT_METHOD] = NETWORK_METHOD
-        self.params[cf.ORBITAL_FIT_LOOKS_X] = 2
-        self.params[cf.ORBITAL_FIT_LOOKS_Y] = 2
+        self.params[pyrate.constants.ORBITAL_FIT_METHOD] = NETWORK_METHOD
+        self.params[pyrate.constants.ORBITAL_FIT_LOOKS_X] = 2
+        self.params[pyrate.constants.ORBITAL_FIT_LOOKS_Y] = 2
 
         remove_orbital_error(self.ifgs, self.params)
 

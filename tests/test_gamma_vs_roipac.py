@@ -25,28 +25,17 @@ import sys
 import tempfile
 import unittest
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
+import pyrate.core.shared
 from tests import common
 
-from pyrate.core import ifgconstants as ifc, config as cf
+from pyrate.core import ifgconstants as ifc
 from pyrate.core.prepifg_helper import _is_number
-from pyrate.core.config import (
-    DEM_HEADER_FILE,
-    NO_DATA_VALUE,
-    OBS_DIR,
-    IFG_FILE_LIST,
-    PROCESSOR,
-    OUT_DIR,
-    IFG_LKSX,
-    IFG_LKSY,
-    IFG_CROP_OPT,
-    NO_DATA_AVERAGING_THRESHOLD,
-    INPUT_IFG_PROJECTION,
-    SLC_DIR,
-    SLC_FILE_LIST,
-    DEM_FILE,
-    APS_INCIDENCE_MAP,
-    APS_ELEVATION_MAP
-    )
+from pyrate.constants import IFG_FILE_LIST, PROCESSOR, OBS_DIR, OUT_DIR, DEM_FILE, DEM_HEADER_FILE, SLC_DIR, \
+    SLC_FILE_LIST, INPUT_IFG_PROJECTION, NO_DATA_VALUE, NO_DATA_AVERAGING_THRESHOLD, IFG_CROP_OPT, IFG_LKSX, IFG_LKSY, \
+    APS_INCIDENCE_MAP, APS_ELEVATION_MAP
 from pyrate import prepifg, conv2tif
 from tests.common import SML_TEST_DIR, small_data_setup, remove_tifs
 
@@ -116,10 +105,10 @@ class TestGammaVsRoipacEquality(unittest.TestCase):
         self.make_gamma_input_files(data_paths)
         sys.argv = ['pyrate', 'prepifg', conf_file]
 
-        base_ifg_paths, dest_paths, params = cf.get_ifg_paths(conf_file)
+        base_ifg_paths, dest_paths, params = pyrate.configuration.get_ifg_paths(conf_file)
         dest_base_ifgs = [os.path.join(
-            params[cf.OBS_DIR], os.path.basename(q).split('.')[0] + '_' +
-            os.path.basename(q).split('.')[1] + '.tif') 
+            params[pyrate.constants.OBS_DIR], os.path.basename(q).split('.')[0] + '_' +
+                                              os.path.basename(q).split('.')[1] + '.tif')
             for q in base_ifg_paths]
         sys.argv = ['pyrate', 'conv2tif', conf_file]
         conv2tif.main()

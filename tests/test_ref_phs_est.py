@@ -25,12 +25,15 @@ import tempfile
 import unittest
 import numpy as np
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.orbital
 import pyrate.core.shared
-from pyrate.core import ifgconstants as ifc, config as cf
+from pyrate.core import ifgconstants as ifc
 from pyrate.core.ref_phs_est import ReferencePhaseError
 from pyrate.core.shared import CorrectionStatusError
-from pyrate import prepifg, process, conv2tif
+from pyrate import prepifg, process, conv2tif, configuration as cf
 from tests import common
 
 legacy_ref_phs_method1 = [-18.2191658020020,
@@ -77,9 +80,9 @@ class RefPhsTests(unittest.TestCase):
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
         self.params = dict()
-        self.params[cf.REF_EST_METHOD] = 1
-        self.params[cf.PARALLEL] = False
-        self.params[cf.TMPDIR] = self.tmp_dir
+        self.params[pyrate.constants.REF_EST_METHOD] = 1
+        self.params[pyrate.constants.PARALLEL] = False
+        self.params[pyrate.constants.TMPDIR] = self.tmp_dir
         self.refpx, self.refpy = 38, 58
         common.copytree(common.SML_TEST_TIF, self.tmp_dir)
         small_tifs = glob.glob(os.path.join(self.tmp_dir, "*.tif"))
@@ -133,21 +136,20 @@ class RefPhsEstimationLegacyTestMethod1Serial(unittest.TestCase):
         params = cf.get_config_params(common.TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', common.TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.TMPDIR] = cls.temp_out_dir
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.TMPDIR] = cls.temp_out_dir
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.REF_EST_METHOD] = 1
-        params[cf.PARALLEL] = False
+        params[pyrate.constants.REF_EST_METHOD] = 1
+        params[pyrate.constants.PARALLEL] = False
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST], params[
+            pyrate.constants.OBS_DIR])
 
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
-                                               params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop, params, xlks)
 
         # start run_pyrate copy
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
@@ -177,7 +179,7 @@ class RefPhsEstimationLegacyTestMethod1Serial(unittest.TestCase):
             print("File opened by another process.")
 
         try:
-            common.remove_tifs(cf.get_config_params(common.TEST_CONF_ROIPAC)[cf.OBS_DIR])
+            common.remove_tifs(cf.get_config_params(common.TEST_CONF_ROIPAC)[pyrate.constants.OBS_DIR])
         except PermissionError:
             print("File opened by another process.")
 
@@ -235,21 +237,21 @@ class RefPhsEstimationLegacyTestMethod1Parallel(unittest.TestCase):
         params = cf.get_config_params(common.TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', common.TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.TMPDIR] = cls.temp_out_dir
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.TMPDIR] = cls.temp_out_dir
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.REF_EST_METHOD] = 1
-        params[cf.PARALLEL] = True
+        params[pyrate.constants.REF_EST_METHOD] = 1
+        params[pyrate.constants.PARALLEL] = True
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
 
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
-                                               params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop,
+                                                         params, xlks)
 
         # start run_pyrate copy
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
@@ -279,7 +281,7 @@ class RefPhsEstimationLegacyTestMethod1Parallel(unittest.TestCase):
             i.close()
         shutil.rmtree(cls.temp_out_dir)
         common.remove_tifs(
-            cf.get_config_params(common.TEST_CONF_ROIPAC)[cf.OBS_DIR])
+            cf.get_config_params(common.TEST_CONF_ROIPAC)[pyrate.constants.OBS_DIR])
 
     def test_estimate_reference_phase(self):
         np.testing.assert_array_almost_equal(legacy_ref_phs_method1,
@@ -333,21 +335,21 @@ class RefPhsEstimationLegacyTestMethod2Serial(unittest.TestCase):
         params = cf.get_config_params(common.TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', common.TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.TMPDIR] = cls.temp_out_dir
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.TMPDIR] = cls.temp_out_dir
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.REF_EST_METHOD] = 2
-        params[cf.PARALLEL] = False
+        params[pyrate.constants.REF_EST_METHOD] = 2
+        params[pyrate.constants.PARALLEL] = False
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
 
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
-                                               params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop,
+                                                         params, xlks)
 
         # start run_pyrate copy
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
@@ -374,7 +376,7 @@ class RefPhsEstimationLegacyTestMethod2Serial(unittest.TestCase):
             ifg.close()
         shutil.rmtree(cls.temp_out_dir)
         common.remove_tifs(
-            cf.get_config_params(common.TEST_CONF_ROIPAC)[cf.OBS_DIR])
+            cf.get_config_params(common.TEST_CONF_ROIPAC)[pyrate.constants.OBS_DIR])
 
 
     def test_ifgs_after_ref_phs_est(self):
@@ -429,22 +431,22 @@ class RefPhsEstimationLegacyTestMethod2Parallel(unittest.TestCase):
         params = cf.get_config_params(common.TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', common.TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.TMPDIR] = cls.temp_out_dir
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.TMPDIR] = cls.temp_out_dir
         conv2tif.main(params)
         prepifg.main(params)
 
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.REF_EST_METHOD] = 2
-        params[cf.PARALLEL] = True
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.REF_EST_METHOD] = 2
+        params[pyrate.constants.PARALLEL] = True
 
-        xlks, ylks, crop = cf.transform_params(params)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
 
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
 
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop,
-                                       params, xlks)
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop,
+                                                         params, xlks)
 
         # start run_pyrate copy
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
@@ -470,7 +472,7 @@ class RefPhsEstimationLegacyTestMethod2Parallel(unittest.TestCase):
             ifg.close()
         shutil.rmtree(cls.temp_out_dir)
         common.remove_tifs(
-            cf.get_config_params(common.TEST_CONF_ROIPAC)[cf.OBS_DIR])
+            cf.get_config_params(common.TEST_CONF_ROIPAC)[pyrate.constants.OBS_DIR])
 
     def test_ifgs_after_ref_phs_est(self):
         for ifg in self.ifgs:

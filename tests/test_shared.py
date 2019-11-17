@@ -32,10 +32,14 @@ from numpy.testing import assert_array_equal
 from osgeo import gdal
 from osgeo.gdal import Open, Dataset, UseExceptions
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.conv2tif
+import pyrate.configuration
 import pyrate.core.shared
 from tests.common import SML_TEST_TIF, SML_TEST_DEM_TIF, TEMPDIR
-from pyrate.core import shared, ifgconstants as ifc, config as cf, prepifg_helper, gamma
-from pyrate import prepifg, conv2tif
+from pyrate.core import shared, ifgconstants as ifc, prepifg_helper, gamma
+from pyrate import prepifg, conv2tif, configuration as cf
 from pyrate.core.shared import Ifg, DEM, RasterException
 from pyrate.core.shared import cell_size, _utm_zone
 
@@ -167,7 +171,7 @@ class IfgIOTests(unittest.TestCase):
         """
         paths = [self.ifg.data_path]
         mlooked_phase_data = prepifg_helper.prepare_ifgs(paths,
-                                                         crop_opt=prepifg_helper.ALREADY_SAME_SIZE,
+                                                         crop_opt=pyrate.constants.ALREADY_SAME_SIZE,
                                                          xlooks=2,
                                                          ylooks=2,
                                                          write_to_disc=False)
@@ -337,34 +341,34 @@ class WriteUnwTest(unittest.TestCase):
 
         # change the required params
         cls.params = cf.get_config_params(cls.test_conf)
-        cls.params[cf.OBS_DIR] = common.SML_TEST_GAMMA
-        cls.params[cf.PROCESSOR] = 1  # gamma
-        file_list = list(cf.parse_namelist(os.path.join(common.SML_TEST_GAMMA,
+        cls.params[pyrate.constants.OBS_DIR] = common.SML_TEST_GAMMA
+        cls.params[pyrate.constants.PROCESSOR] = 1  # gamma
+        file_list = list(pyrate.core.shared.parse_namelist(os.path.join(common.SML_TEST_GAMMA,
                                                         'ifms_17')))
-        fd, cls.params[cf.IFG_FILE_LIST] = tempfile.mkstemp(suffix='.conf',
-                                                            dir=cls.tif_dir)
+        fd, cls.params[pyrate.constants.IFG_FILE_LIST] = tempfile.mkstemp(suffix='.conf',
+                                                                          dir=cls.tif_dir)
         os.close(fd)
         # write a short filelist with only 3 gamma unws
-        with open(cls.params[cf.IFG_FILE_LIST], 'w') as fp:
+        with open(cls.params[pyrate.constants.IFG_FILE_LIST], 'w') as fp:
             for f in file_list[:3]:
                 fp.write(os.path.join(common.SML_TEST_GAMMA, f) + '\n')
-        cls.params[cf.OUT_DIR] = cls.tif_dir
-        cls.params[cf.PARALLEL] = 0
-        cls.params[cf.REF_EST_METHOD] = 1
-        cls.params[cf.DEM_FILE] = common.SML_TEST_DEM_GAMMA
-        # base_unw_paths need to be geotiffed and multilooked by run_prepifg
+        cls.params[pyrate.constants.OUT_DIR] = cls.tif_dir
+        cls.params[pyrate.constants.PARALLEL] = 0
+        cls.params[pyrate.constants.REF_EST_METHOD] = 1
+        cls.params[pyrate.constants.DEM_FILE] = common.SML_TEST_DEM_GAMMA
+        # ifgs_paths need to be geotiffed and multilooked by run_prepifg
         cls.base_unw_paths = pyrate.core.shared.original_ifg_paths(
-            cls.params[cf.IFG_FILE_LIST], cls.params[cf.OBS_DIR])
+            cls.params[pyrate.constants.IFG_FILE_LIST], cls.params[pyrate.constants.OBS_DIR])
         cls.base_unw_paths.append(common.SML_TEST_DEM_GAMMA)
 
-        xlks, ylks, crop = cf.transform_params(cls.params)
+        xlks, ylks, crop = cls.params["IFG_LKSX"], cls.params["IFG_LKSY"], cls.params["IFG_CROP_OPT"]
         # dest_paths are tifs that have been geotif converted and multilooked
         conv2tif.main(cls.params)
         prepifg.main(cls.params)
-        # run_prepifg.gamma_prepifg(cls.base_unw_paths, cls.params)
+        # run_prepifg.gamma_prepifg(cls.ifgs_paths, cls.params)
         cls.base_unw_paths.pop()  # removed dem as we don't want it in ifgs
 
-        cls.dest_paths = cf.get_dest_paths(
+        cls.dest_paths = pyrate.configuration.get_dest_paths(
             cls.base_unw_paths, crop, cls.params, xlks)
         cls.ifgs = common.small_data_setup(datafiles=cls.dest_paths)
 
@@ -373,7 +377,7 @@ class WriteUnwTest(unittest.TestCase):
         for i in cls.ifgs:
             i.close()
         shutil.rmtree(cls.tif_dir)
-        common.remove_tifs(cls.params[cf.OBS_DIR])
+        common.remove_tifs(cls.params[pyrate.constants.OBS_DIR])
 
     def test_unw_contains_same_data_as_numpy_array(self):
         from datetime import time
@@ -405,8 +409,8 @@ class WriteUnwTest(unittest.TestCase):
                                               dest_unw=temp_unw,
                                               ifg_proc=1)
         # convert the .unw to geotif
-        shared.write_fullres_geotiff(header=header, data_path=temp_unw,
-                                     dest=temp_tif, nodata=np.nan)
+        pyrate.conv2tif.write_fullres_geotiff(header=header, data_path=temp_unw,
+                                              dest=temp_tif, nodata=np.nan)
 
         # now compare geotiff with original numpy array
         ds = gdal.Open(temp_tif, gdal.GA_ReadOnly)
@@ -430,8 +434,8 @@ class WriteUnwTest(unittest.TestCase):
         # Convert back to .unw
         dest_unws = []
         for g in geotiffs:
-            dest_unw = os.path.join(self.params[cf.OUT_DIR],
-                         os.path.splitext(g)[0] + '.unw')
+            dest_unw = os.path.join(self.params[pyrate.constants.OUT_DIR],
+                                    os.path.splitext(g)[0] + '.unw')
             shared.write_unw_from_data_or_geotiff(
                 geotif_or_data=g, dest_unw= dest_unw, ifg_proc=1)
             dest_unws.append(dest_unw)
@@ -451,12 +455,12 @@ class WriteUnwTest(unittest.TestCase):
 
     def test_roipac_raises(self):
         geotiffs = [os.path.join(
-            self.params[cf.OUT_DIR], os.path.basename(b).split('.')[0] + '_' 
-            + os.path.basename(b).split('.')[1] + '.tif')
+            self.params[pyrate.constants.OUT_DIR], os.path.basename(b).split('.')[0] + '_'
+                                                   + os.path.basename(b).split('.')[1] + '.tif')
             for b in self.base_unw_paths]
 
         for g in geotiffs[:1]:
-            dest_unw = os.path.join(self.params[cf.OUT_DIR],
+            dest_unw = os.path.join(self.params[pyrate.constants.OUT_DIR],
                                     os.path.splitext(g)[0] + '.unw')
             with self.assertRaises(NotImplementedError):
                 shared.write_unw_from_data_or_geotiff(

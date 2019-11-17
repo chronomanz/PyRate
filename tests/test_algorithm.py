@@ -35,8 +35,7 @@ from pyrate.core.algorithm import (least_squares_covariance,
                                    master_slave_ids,
                                    )
 
-from pyrate.core.config import parse_namelist
-from pyrate.core.shared import Ifg, convert_radians_to_mm
+from pyrate.core.shared import Ifg, convert_radians_to_mm, parse_namelist
 from tests.common import small5_mock_ifgs, SML_TEST_TIF
 
 

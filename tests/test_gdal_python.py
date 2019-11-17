@@ -18,6 +18,8 @@ This Python module contains tests for the gdal_python.py PyRate module.
 """
 from subprocess import check_call
 
+import pyrate.core.shared
+import pyrate.prepifg
 from pyrate.core.prepifg_helper import _resample_ifg
 
 import glob
@@ -31,7 +33,7 @@ from numpy import where, nan
 import numpy as np
 from osgeo import gdal, gdalconst
 
-from pyrate.core import gdal_python, config as cf
+from pyrate.core import gdal_python
 from pyrate.core.shared import Ifg
 from tests import common
 
@@ -438,7 +440,7 @@ class TestOldPrepifgVsGdalPython(unittest.TestCase):
             self.out_tif = self.out_tif.split(".")[0]+"_2.tif"
 
             # only band 1 is resapled in warp_old
-            averaged_and_resampled, _ = gdal_python.crop_resample_average(self.temp_tif, extents, [res, -res], self.out_tif, thresh, match_pyrate=True)
+            averaged_and_resampled, _ = pyrate.prepifg.crop_resample_average(self.temp_tif, extents, [res, -res], self.out_tif, thresh, match_pyrate=True)
             ifg = Ifg(self.temp_tif)
             # only band 1 is resampled in warp_old
             data, self.old_prepifg_path = warp_old(ifg, x_looks, y_looks, extents_str, [res, -res],
@@ -477,7 +479,7 @@ class TestOldPrepifgVsGdalPython(unittest.TestCase):
             for looks in range(10):
                 x_looks = y_looks = looks
                 res = orig_res*x_looks
-                averaged_and_resapled, out_ds = gdal_python.crop_resample_average(
+                averaged_and_resapled, out_ds = pyrate.prepifg.crop_resample_average(
                     ifg.data_path, extents, new_res=[res, -res],
                     output_file=self.temp_tif, thresh=thresh,
                     match_pyrate=False)
@@ -520,7 +522,7 @@ class TestOldPrepifgVsGdalPython(unittest.TestCase):
             for looks in range(1, 10):
                 x_looks = y_looks = looks
                 res = orig_res*x_looks
-                averaged_and_resampled = gdal_python.crop_resample_average(
+                averaged_and_resampled = pyrate.prepifg.crop_resample_average(
                     ifg.data_path, extents, new_res=[res, -res],
                     output_file=self.temp_tif, thresh=thresh,
                     match_pyrate=True)[0]
@@ -553,7 +555,7 @@ class TestOldPrepifgVsGdalPython(unittest.TestCase):
             thresh = 0.5
             x_looks = y_looks = 6
             res = orig_res*x_looks
-            averaged_and_resampled, out_ds = gdal_python.crop_resample_average(
+            averaged_and_resampled, out_ds = pyrate.prepifg.crop_resample_average(
                 ifg.data_path, extents, new_res=[res, -res],
                 output_file=self.temp_tif, thresh=thresh,
                 out_driver_type='MEM', match_pyrate=True)
@@ -680,7 +682,7 @@ def warp_old(ifg, x_looks, y_looks, extents, resolution, thresh,
         cmd += ["-tr"] + [str(r) for r in resolution] # change res of final output
 
     # use GDAL to cut (and resample) the final output layers
-    looks_path = cf.mlooked_path(ifg.data_path, y_looks, crop_out)
+    looks_path = pyrate.prepifg.mlooked_path(ifg.data_path, y_looks, crop_out)
     cmd += [ifg.data_path, looks_path]
 
     check_call(cmd)

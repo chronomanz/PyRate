@@ -31,32 +31,16 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from osgeo import gdal
 
-from pyrate import prepifg, conv2tif
-from pyrate.core import config as cf
-from pyrate.core.config import mlooked_path
+import pyrate.constants
+from pyrate import prepifg, conv2tif, configuration as cf
 from pyrate.core.shared import Ifg, DEM
-from pyrate.core.prepifg_helper import CUSTOM_CROP, MAXIMUM_CROP, MINIMUM_CROP, \
-    ALREADY_SAME_SIZE
-from pyrate.core.prepifg_helper import prepare_ifgs, _resample, PreprocessError, CustomExts
+from pyrate.prepifg import mlooked_path
+from pyrate.core.prepifg_helper import prepare_ifgs, _resample, PreprocessError
 # from pyrate.tasks.utils import DUMMY_SECTION_NAME
-from pyrate.core.config import (
-    DEM_HEADER_FILE,
-    NO_DATA_VALUE,
-    OBS_DIR,
-    IFG_FILE_LIST,
-    PROCESSOR,
-    OUT_DIR,
-    SLC_DIR,
-    SLC_FILE_LIST,
-    IFG_LKSX,
-    IFG_LKSY,
-    IFG_CROP_OPT,
-    NO_DATA_AVERAGING_THRESHOLD,
-    DEM_FILE,
-    APS_INCIDENCE_MAP,
-    APS_ELEVATION_MAP,
-    APS_METHOD,
-    APS_CORRECTION)
+from pyrate.constants import IFG_FILE_LIST, PROCESSOR, OBS_DIR, OUT_DIR, DEM_FILE, DEM_HEADER_FILE, SLC_DIR, \
+    SLC_FILE_LIST, NO_DATA_VALUE, NO_DATA_AVERAGING_THRESHOLD, IFG_CROP_OPT, IFG_LKSX, IFG_LKSY, APS_CORRECTION, \
+    APS_METHOD, APS_INCIDENCE_MAP, APS_ELEVATION_MAP, MINIMUM_CROP, MAXIMUM_CROP, CUSTOM_CROP, ALREADY_SAME_SIZE, \
+    CustomExts
 
 from tests.common import SML_TEST_LEGACY_PREPIFG_DIR
 from tests.common import PREP_TEST_TIF, SML_TEST_DEM_DIR
@@ -88,15 +72,16 @@ def same_exts_ifgs():
 
 def extents_from_params(params):
     """Custom extents from supplied parameters"""
-    keys = (cf.IFG_XFIRST, cf.IFG_YFIRST, cf.IFG_XLAST, cf.IFG_YLAST)
+    keys = (
+    pyrate.constants.IFG_XFIRST, pyrate.constants.IFG_YFIRST, pyrate.constants.IFG_XLAST, pyrate.constants.IFG_YLAST)
     return CustomExts(*[params[k] for k in keys])
 
 
 def test_extents_from_params():
     xf, yf = 1.0, 2.0
     xl, yl = 5.0, 7.0
-    pars = {cf.IFG_XFIRST: xf, cf.IFG_XLAST: xl,
-            cf.IFG_YFIRST: yf, cf.IFG_YLAST: yl}
+    pars = {pyrate.constants.IFG_XFIRST: xf, pyrate.constants.IFG_XLAST: xl,
+            pyrate.constants.IFG_YFIRST: yf, pyrate.constants.IFG_YLAST: yl}
 
     assert extents_from_params(pars) == CustomExts(xf, yf, xl, yl)
 
@@ -671,7 +656,7 @@ class TestOneIncidenceOrElevationMap(unittest.TestCase):
     def tearDown(self):
         params = cf.get_config_params(self.conf_file)
         shutil.rmtree(self.base_dir)
-        common.remove_tifs(params[cf.OBS_DIR])
+        common.remove_tifs(params[pyrate.constants.OBS_DIR])
 
     def make_input_files(self, inc='', ele=''):
         with open(self.conf_file, 'w') as conf:
@@ -716,13 +701,13 @@ class TestOneIncidenceOrElevationMap(unittest.TestCase):
         sys.argv = ['dummy', self.conf_file]
         prepifg.main(params)
         # test 17 geotiffs created
-        geotifs = glob.glob(os.path.join(params[cf.OBS_DIR], '*_unw.tif'))
+        geotifs = glob.glob(os.path.join(params[pyrate.constants.OBS_DIR], '*_unw.tif'))
         self.assertEqual(17, len(geotifs))
         # test dem geotiff created
-        demtif = glob.glob(os.path.join(params[cf.OBS_DIR], '*_dem.tif'))
+        demtif = glob.glob(os.path.join(params[pyrate.constants.OBS_DIR], '*_dem.tif'))
         self.assertEqual(1, len(demtif))
         # elevation/incidence file
-        ele = glob.glob(os.path.join(params[cf.OBS_DIR],
+        ele = glob.glob(os.path.join(params[pyrate.constants.OBS_DIR],
                                      '*utm_{ele}.tif'.format(ele=ele)))[0]
         self.assertTrue(os.path.exists(ele))
         # mlooked tifs

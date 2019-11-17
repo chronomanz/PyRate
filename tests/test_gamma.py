@@ -28,18 +28,16 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from osgeo import gdal
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.ifgconstants as ifc
-from pyrate.core import shared, config as cf, gamma
-from pyrate.core.config import (
-    DEM_HEADER_FILE,
-    NO_DATA_VALUE,
-    OBS_DIR,
-    IFG_FILE_LIST,
-    PROCESSOR,
-    OUT_DIR,
-    SLC_DIR)
+import pyrate.core.shared
+from pyrate.core import shared, gamma
+from pyrate.constants import IFG_FILE_LIST, PROCESSOR, OBS_DIR, OUT_DIR, DEM_HEADER_FILE, SLC_DIR, NO_DATA_VALUE
 from pyrate import prepifg, conv2tif
-from pyrate.core.shared import write_fullres_geotiff, GeotiffException
+from pyrate.core.shared import GeotiffException
+from pyrate.conv2tif import write_fullres_geotiff
 from tests import common
 from tests.common import GAMMA_TEST_DIR, SML_TEST_GAMMA
 from tests.common import TEST_CONF_GAMMA, TEMPDIR
@@ -296,13 +294,13 @@ class TestGammaParallelVsSerial(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # read in the params
-        _, _, params = cf.get_ifg_paths(TEST_CONF_GAMMA)
+        _, _, params = pyrate.configuration.get_ifg_paths(TEST_CONF_GAMMA)
         glob_prefix = "*utm_unw_1rlks_1cr.tif"
 
         # SERIAL
         cls.serial_dir = tempfile.mkdtemp()
-        params[cf.OUT_DIR] = cls.serial_dir
-        params[cf.PARALLEL] = False
+        params[pyrate.constants.OUT_DIR] = cls.serial_dir
+        params[pyrate.constants.PARALLEL] = False
         shared.mkdir_p(cls.serial_dir)
 
         gtif_paths = conv2tif.main(params)
@@ -316,8 +314,8 @@ class TestGammaParallelVsSerial(unittest.TestCase):
 
         # PARALLEL 
         cls.parallel_dir = tempfile.mkdtemp()
-        params[cf.OUT_DIR] = cls.parallel_dir
-        params[cf.PARALLEL] = True
+        params[pyrate.constants.OUT_DIR] = cls.parallel_dir
+        params[pyrate.constants.PARALLEL] = True
         shared.mkdir_p(cls.parallel_dir)
 
         gtif_paths = conv2tif.main(params)

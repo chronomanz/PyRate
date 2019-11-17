@@ -25,9 +25,12 @@ from numpy import array
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+import pyrate.configuration
+import pyrate.constants
+import pyrate.configuration
 import pyrate.core.shared
-from pyrate.core import shared, ref_phs_est as rpe, ifgconstants as ifc, config as cf
-from pyrate import process, prepifg, conv2tif
+from pyrate.core import shared, ifgconstants as ifc
+from pyrate import process, prepifg, conv2tif, configuration as cf
 from pyrate.core.covariance import cvd, get_vcmt, RDist
 import pyrate.core.orbital
 from tests import common
@@ -41,8 +44,8 @@ class CovarianceTests(unittest.TestCase):
         for i in self.ifgs:
             i.mm_converted = True
         params = dict()
-        params[cf.NO_DATA_VALUE] = 0
-        params[cf.NAN_CONVERSION] = True
+        params[pyrate.constants.NO_DATA_VALUE] = 0
+        params[pyrate.constants.NAN_CONVERSION] = True
         self.params = params
         self.r_dist = RDist(self.ifgs[0])()
 
@@ -183,17 +186,17 @@ class LegacyEqualityTest(unittest.TestCase):
         params = cf.get_config_params(TEST_CONF_ROIPAC)
         cls.temp_out_dir = tempfile.mkdtemp()
         sys.argv = ['prepifg.py', TEST_CONF_ROIPAC]
-        params[cf.OUT_DIR] = cls.temp_out_dir
-        params[cf.TMPDIR] = os.path.join(cls.temp_out_dir, cf.TMPDIR)
-        shared.mkdir_p(params[cf.TMPDIR])
-        params[cf.REF_EST_METHOD] = 2
+        params[pyrate.constants.OUT_DIR] = cls.temp_out_dir
+        params[pyrate.constants.TMPDIR] = os.path.join(cls.temp_out_dir, pyrate.constants.TMPDIR)
+        shared.mkdir_p(params[pyrate.constants.TMPDIR])
+        params[pyrate.constants.REF_EST_METHOD] = 2
         conv2tif.main(params)
         prepifg.main(params)
         cls.params = params
-        xlks, ylks, crop = cf.transform_params(params)
-        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[cf.IFG_FILE_LIST],
-                                                               params[cf.OBS_DIR])
-        dest_paths = cf.get_dest_paths(base_ifg_paths, crop, params, xlks)
+        xlks, ylks, crop = params["IFG_LKSX"], params["IFG_LKSY"], params["IFG_CROP_OPT"]
+        base_ifg_paths = pyrate.core.shared.original_ifg_paths(params[pyrate.constants.IFG_FILE_LIST],
+                                                               params[pyrate.constants.OBS_DIR])
+        dest_paths = pyrate.configuration.get_dest_paths(base_ifg_paths, crop, params, xlks)
         ifgs = common.pre_prepare_ifgs(dest_paths, params)
         refx, refy = process._ref_pixel_calc(dest_paths, params)
         pyrate.core.orbital.remove_orbital_error(ifgs, params)
@@ -217,7 +220,7 @@ class LegacyEqualityTest(unittest.TestCase):
             i.close()
         shutil.rmtree(cls.temp_out_dir)
         params = cf.get_config_params(TEST_CONF_ROIPAC)
-        common.remove_tifs(params[cf.OBS_DIR])
+        common.remove_tifs(params[pyrate.constants.OBS_DIR])
 
     def test_legacy_maxvar_equality_small_test_files(self):
         np.testing.assert_array_almost_equal(self.maxvar, legacy_maxvar,
@@ -242,7 +245,7 @@ class LegacyEqualityTest(unittest.TestCase):
         for ifg in self.ifgs:
             if not ifg.is_open:
                 ifg.open()
-            data_file = join(self.params[cf.TMPDIR],
+            data_file = join(self.params[pyrate.constants.TMPDIR],
                              'cvd_data_{b}.npy'.format(
                                  b=basename(ifg.data_path).split('.')[0]))
             assert isfile(data_file)
