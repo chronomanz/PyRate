@@ -17,7 +17,6 @@
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 from subprocess import check_output
-import sys
 import platform
 import setuptools
 __version__ = "0.4.0"
@@ -36,9 +35,9 @@ if platform.system() in 'Windows':
 else:
     GDAL_VERSION = check_output(["gdal-config", "--version"]).decode(encoding="utf-8").split('\n')[0]
 
-requirements = [r + f'=={GDAL_VERSION}' if r == 'GDAL'
-                else r for r in requirements]
+requirements = [r + f'=={GDAL_VERSION}' if r == 'GDAL' else r for r in requirements]
 setup_requirements = [r for r in requirements if "numpy==" in r]
+
 
 class PyTest(TestCommand, object):
 
