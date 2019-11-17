@@ -20,8 +20,7 @@ import os
 import logging
 import argparse
 from argparse import RawTextHelpFormatter
-from pyrate.core import config as cf
-from pyrate import conv2tif, prepifg, process, merge
+from pyrate import conv2tif, prepifg, process, merge, configuration as cf
 from pyrate.core import pyratelog
 import time
 
@@ -46,22 +45,22 @@ def prepifg_handler(config_file):
     prepifg.main(params)
 
 
-def process_handler(config_file, rows, cols):
+def process_handler(config_file):
     """
     Time series and linear rate computation.
     """
     config_file = os.path.abspath(config_file)
     params = cf.get_config_params(config_file)
-    process.main(params, rows, cols)
+    process.main(params)
 
 
-def merge_handler(config_file, rows, cols):
+def merge_handler(config_file):
     """
     Reassemble computed tiles and save as geotiffs.
     """
     config_file = os.path.abspath(config_file)
     params = cf.get_config_params(config_file)
-    merge.main(params, rows, cols)
+    merge.main(params)
 
 
 CLI_DESCRIPTION = """
@@ -98,14 +97,10 @@ def main():
     # create the parser for the "process" command
     parser_process = subparsers.add_parser('process', help='Main processing workflow including corrections, time series and stacking computation.', add_help=True)
     parser_process.add_argument('-f', '--config_file', action="store", type=str, default=None, help="Pass configuration file", required=True)
-    parser_process.add_argument('-r', '--rows', type=int, required=False, default=1, help="divide ifgs into this many rows. Must be same as number of rows used previously in main workflow.")
-    parser_process.add_argument('-c', '--cols', type=int, required=False, default=1, help="divide ifgs into this many columns. Must be same as number of cols used previously in main workflow.")
 
     # create the parser for the "merge" command
     parser_merge = subparsers.add_parser('merge', help="Reassemble computed tiles and save as geotiffs.", add_help=True)
     parser_merge.add_argument('-f', '--config_file', action="store", type=str, default=None, help="Pass configuration file", required=False)
-    parser_merge.add_argument('-r', '--rows', type=int, required=False, default=1, help="divide ifgs into this many rows. Must be same as number of rows used previously in main workflow.")
-    parser_merge.add_argument('-c', '--cols', type=int, required=False, default=1, help="divide ifgs into this many columns. Must be same as number of cols used previously in main workflow.")
 
     args = parser.parse_args()
     log.debug("Arguments supplied at command line: ")
@@ -122,10 +117,10 @@ def main():
         prepifg_handler(args.config_file)
 
     if args.command == "process":
-        process_handler(args.config_file, args.rows, args.cols)
+        process_handler(args.config_file)
 
     if args.command == "merge":
-        merge_handler(args.config_file, args.rows, args.cols)
+        merge_handler(args.config_file)
 
     log.debug("--- %s seconds ---" % (time.time() - start_time))
 
