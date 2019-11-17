@@ -27,7 +27,8 @@ import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift
 from scipy.optimize import fmin
 
-from pyrate.core import shared, ifgconstants as ifc, config as cf
+import pyrate.constants
+from pyrate.core import shared, ifgconstants as ifc
 from pyrate.core.shared import PrereadIfg
 from pyrate.core.algorithm import master_slave_ids
 
@@ -184,7 +185,7 @@ def cvd_from_phase(phase, ifg, r_dist, calc_alpha, save_acg=False, params=None):
     # optionally save acg vs dist observations to disk
     if save_acg:
         _save_cvd_data(acg, r_dist[indices_to_keep],
-                       ifg.data_path, params[cf.TMPDIR])
+                       ifg.data_path, params[pyrate.constants.TMPDIR])
 
     if calc_alpha:
         # bin width for collecting data
