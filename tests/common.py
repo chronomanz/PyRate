@@ -30,7 +30,8 @@ import numpy as np
 from numpy import isnan, sum as nsum
 from osgeo import gdal
 
-from pyrate.core import algorithm, ifgconstants as ifc, config as cf, timeseries, mst, linrate
+import pyrate.constants
+from pyrate.core import algorithm, ifgconstants as ifc, timeseries, mst, linrate
 from pyrate.core.shared import (Ifg, nan_and_mm_convert, get_geotiff_header_info,
                                 write_output_geotiff)
 
@@ -266,10 +267,10 @@ def prepare_ifgs_without_phase(ifg_paths, params):
     for i in ifgs:
         if not i.is_open:
             i.open(readonly=False)
-        nan_conversion = params[cf.NAN_CONVERSION]
+        nan_conversion = params[pyrate.constants.NAN_CONVERSION]
         if nan_conversion:  # nan conversion happens here in networkx mst
             # if not ifg.nan_converted:
-            i.nodata_value = params[cf.NO_DATA_VALUE]
+            i.nodata_value = params[pyrate.constants.NO_DATA_VALUE]
             i.convert_to_nans()
     return ifgs
 
@@ -279,7 +280,7 @@ def mst_calculation(ifg_paths_or_instance, params):
         ifgs = pre_prepare_ifgs(ifg_paths_or_instance, params)
         mst_grid = mst.mst_parallel(ifgs, params)
         # write mst output to a file
-        mst_mat_binary_file = join(params[cf.OUT_DIR], 'mst_mat')
+        mst_mat_binary_file = join(params[pyrate.constants.OUT_DIR], 'mst_mat')
         np.save(file=mst_mat_binary_file, arr=mst_grid)
 
         for i in ifgs:
@@ -316,8 +317,8 @@ def compute_time_series(ifgs, mst_grid, params, vcmt):
         ifgs, params, vcmt=vcmt, mst=mst_grid)
 
     # tsvel_file = join(params[cf.OUT_DIR], 'tsvel.npy')
-    tsincr_file = join(params[cf.OUT_DIR], 'tsincr.npy')
-    tscum_file = join(params[cf.OUT_DIR], 'tscum.npy')
+    tsincr_file = join(params[pyrate.constants.OUT_DIR], 'tsincr.npy')
+    tscum_file = join(params[pyrate.constants.OUT_DIR], 'tscum.npy')
     np.save(file=tsincr_file, arr=tsincr)
     np.save(file=tscum_file, arr=tscum)
     # np.save(file=tsvel_file, arr=tsvel)
@@ -349,7 +350,7 @@ def write_timeseries_geotiff(ifgs, params, tsincr, pr_type):
         md['SEQUENCE_POSITION'] = i+1  # sequence position
 
         data = tsincr[:, :, i]
-        dest = join(params[cf.OUT_DIR], pr_type + "_" +
+        dest = join(params[pyrate.constants.OUT_DIR], pr_type + "_" +
                     str(epochlist.dates[i + 1]) + ".tif")
         md[ifc.DATA_TYPE] = pr_type
         write_output_geotiff(md, gt, wkt, data, dest, np.nan)
@@ -373,23 +374,23 @@ def write_linrate_tifs(ifgs, params, res):
     rate, error, samples = res
     gt, md, wkt = get_geotiff_header_info(ifgs[0].data_path)
     epochlist = algorithm.get_epochs(ifgs)[0]
-    dest = join(params[cf.OUT_DIR], "linrate.tif")
+    dest = join(params[pyrate.constants.OUT_DIR], "linrate.tif")
     md[ifc.EPOCH_DATE] = epochlist.dates
     md[ifc.DATA_TYPE] = ifc.LINRATE
     write_output_geotiff(md, gt, wkt, rate, dest, np.nan)
-    dest = join(params[cf.OUT_DIR], "linerror.tif")
+    dest = join(params[pyrate.constants.OUT_DIR], "linerror.tif")
     md[ifc.DATA_TYPE] = ifc.LINERROR
     write_output_geotiff(md, gt, wkt, error, dest, np.nan)
-    dest = join(params[cf.OUT_DIR], "linsamples.tif")
+    dest = join(params[pyrate.constants.OUT_DIR], "linsamples.tif")
     md[ifc.DATA_TYPE] = ifc.LINSAMP
     write_output_geotiff(md, gt, wkt, samples, dest, np.nan)
     write_linrate_numpy_files(error, rate, samples, params)
 
 
 def write_linrate_numpy_files(error, rate, samples, params):
-    rate_file = join(params[cf.OUT_DIR], 'rate.npy')
-    error_file = join(params[cf.OUT_DIR], 'error.npy')
-    samples_file = join(params[cf.OUT_DIR], 'samples.npy')
+    rate_file = join(params[pyrate.constants.OUT_DIR], 'rate.npy')
+    error_file = join(params[pyrate.constants.OUT_DIR], 'error.npy')
+    samples_file = join(params[pyrate.constants.OUT_DIR], 'samples.npy')
     np.save(file=rate_file, arr=rate)
     np.save(file=error_file, arr=error)
     np.save(file=samples_file, arr=samples)
