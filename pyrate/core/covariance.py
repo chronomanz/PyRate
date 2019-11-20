@@ -36,7 +36,7 @@ from pyrate.core.algorithm import master_slave_ids
 # distance division factor of 1000 converts to km and is needed to match legacy output
 DISTFACT = 1000
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 
 def _pendiffexp(alphamod, cvdav):

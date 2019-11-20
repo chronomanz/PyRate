@@ -23,14 +23,14 @@ from numpy import empty, isnan, reshape, float32, squeeze
 from numpy import dot, vstack, zeros, meshgrid
 import numpy as np
 from numpy.linalg import pinv
-# from joblib import Parallel, delayed
 from scipy.linalg import lstsq
 
+import pyrate.constants
 from pyrate.core.algorithm import master_slave_ids, get_all_epochs
-from pyrate.core import shared, ifgconstants as ifc, config as cf, prepifg_helper, mst
+from pyrate.core import shared, ifgconstants as ifc, prepifg_helper, mst
 from pyrate.core.shared import nanmedian, Ifg
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 # Orbital correction tasks
 #
@@ -60,12 +60,12 @@ log = logging.getLogger(__name__)
 # offsets are cols of 1s in a diagonal line on the LHS of the sparse array.
 
 # ORBITAL ERROR correction constants
-INDEPENDENT_METHOD = cf.INDEPENDENT_METHOD
-NETWORK_METHOD = cf.NETWORK_METHOD
+INDEPENDENT_METHOD = pyrate.constants.INDEPENDENT_METHOD
+NETWORK_METHOD = pyrate.constants.NETWORK_METHOD
 
-PLANAR = cf.PLANAR
-QUADRATIC = cf.QUADRATIC
-PART_CUBIC = cf.PART_CUBIC
+PLANAR = pyrate.constants.PLANAR
+QUADRATIC = pyrate.constants.QUADRATIC
+PART_CUBIC = pyrate.constants.PART_CUBIC
 
 
 def remove_orbital_error(ifgs, params, preread_ifgs=None):
@@ -90,53 +90,48 @@ def remove_orbital_error(ifgs, params, preread_ifgs=None):
     mlooked = None
     # mlooking is not necessary for independent correction
     # can use multiple procesing if write_to_disc=True
-    if params[cf.ORBITAL_FIT_METHOD] == NETWORK_METHOD:
-        mlooked_dataset = prepifg_helper.prepare_ifgs(
-            ifg_paths,
-            crop_opt=prepifg_helper.ALREADY_SAME_SIZE,
-            xlooks=params[cf.ORBITAL_FIT_LOOKS_X],
-            ylooks=params[cf.ORBITAL_FIT_LOOKS_Y],
-            thresh=params[cf.NO_DATA_AVERAGING_THRESHOLD],
-            write_to_disc=False)
+    if params[pyrate.constants.ORBITAL_FIT_METHOD] == NETWORK_METHOD:
+        mlooked_dataset = prepifg_helper.prepare_ifgs(ifg_paths,
+                                                        crop_opt=pyrate.constants.ALREADY_SAME_SIZE,
+                                                        xlooks=params[pyrate.constants.ORBITAL_FIT_LOOKS_X],
+                                                        ylooks=params[pyrate.constants.ORBITAL_FIT_LOOKS_Y],
+                                                        thresh=params[pyrate.constants.NO_DATA_AVERAGING_THRESHOLD],
+                                                        write_to_disc=False
+                                                      )
         mlooked = [Ifg(m[1]) for m in mlooked_dataset]
 
         for m in mlooked:
             m.initialize()
-            m.nodata_value = params[cf.NO_DATA_VALUE]
+            m.nodata_value = params[pyrate.constants.NO_DATA_VALUE]
             m.convert_to_nans()
             m.convert_to_mm()
 
-    _orbital_correction(ifgs, params, mlooked=mlooked,
-                        preread_ifgs=preread_ifgs)
+    _orbital_correction(ifgs, params, mlooked=mlooked, preread_ifgs=preread_ifgs)
 
 
-def _orbital_correction(ifgs_or_ifg_paths, params, mlooked=None, offset=True,
-                        preread_ifgs=None):
+def _orbital_correction(ifgs_or_ifg_paths, params, mlooked=None, offset=True, preread_ifgs=None):
     """
     Convenience function to perform orbital correction.
     """
-    degree = params[cf.ORBITAL_FIT_DEGREE]
-    method = params[cf.ORBITAL_FIT_METHOD]
+    degree = params[pyrate.constants.ORBITAL_FIT_DEGREE]
+    method = params[pyrate.constants.ORBITAL_FIT_METHOD]
     # parallel = params[cf.PARALLEL]  # not implemented
 
     if degree not in [PLANAR, QUADRATIC, PART_CUBIC]:
         msg = "Invalid degree of %s for orbital correction" \
-            % cf.ORB_DEGREE_NAMES.get(degree)
+              % pyrate.constants.ORB_DEGREE_NAMES.get(degree)
         raise OrbitalError(msg)
 
     log.info('Removing orbital error using {} correction method'
-             ' and degree={}'.format(cf.ORB_METHOD_NAMES.get(method), 
-                                     cf.ORB_DEGREE_NAMES.get(degree)))
+             ' and degree={}'.format(pyrate.constants.ORB_METHOD_NAMES.get(method),
+                                     pyrate.constants.ORB_DEGREE_NAMES.get(degree)))
 
     if method == NETWORK_METHOD:
         if mlooked is None:
-            network_orbital_correction(ifgs_or_ifg_paths, degree, offset,
-                                       params, m_ifgs=mlooked,
-                                       preread_ifgs=preread_ifgs)
+            network_orbital_correction(ifgs_or_ifg_paths, degree, offset, params, m_ifgs=mlooked, preread_ifgs=preread_ifgs)
         else:
             _validate_mlooked(mlooked, ifgs_or_ifg_paths)
-            network_orbital_correction(ifgs_or_ifg_paths, degree, offset,
-                                       params, mlooked, preread_ifgs)
+            network_orbital_correction(ifgs_or_ifg_paths, degree, offset, params, mlooked, preread_ifgs)
 
     elif method == INDEPENDENT_METHOD:
         # not running in parallel
@@ -167,9 +162,9 @@ def _validate_mlooked(mlooked, ifgs):
 
 
 def _get_num_params(degree, offset=None):
-    '''
+    """
     Returns number of model parameters from string parameter
-    '''
+    """
 
     if degree == PLANAR:
         nparams = 2
@@ -178,8 +173,7 @@ def _get_num_params(degree, offset=None):
     elif degree == PART_CUBIC:
         nparams = 6
     else:
-        msg = "Invalid orbital model degree: %s" \
-            % cf.ORB_DEGREE_NAMES.get(degree)
+        msg = "Invalid orbital model degree: %s" % pyrate.constants.ORB_DEGREE_NAMES.get(degree)
         raise OrbitalError(msg)
 
     # NB: independent method only, network method handles offsets separately
@@ -217,8 +211,7 @@ def independent_orbital_correction(ifg, degree, offset, params):
 
     # calculate forward model & morph back to 2D
     if offset:
-        fullorb = np.reshape(np.dot(dm[:, :-1], model[:-1]),
-                             ifg.phase_data.shape)
+        fullorb = np.reshape(np.dot(dm[:, :-1], model[:-1]), ifg.phase_data.shape)
     else:
         fullorb = np.reshape(np.dot(dm, model), ifg.phase_data.shape)
     offset_removal = nanmedian(np.ravel(ifg.phase_data - fullorb))
@@ -230,8 +223,7 @@ def independent_orbital_correction(ifg, degree, offset, params):
         ifg.close()
 
 
-def network_orbital_correction(ifgs, degree, offset, params, m_ifgs=None,
-                               preread_ifgs=None):
+def network_orbital_correction(ifgs, degree, offset, params, m_ifgs=None, preread_ifgs=None):
     """
     This algorithm implements a network inversion to determine orbital
     corrections for a set of interferograms forming a connected network.
@@ -376,7 +368,6 @@ def get_design_matrix(ifg, degree, offset, scale=100.0):
 
 
 def get_network_design_matrix(ifgs, degree, offset):
-    # pylint: disable=too-many-locals
     """
     Returns larger-format design matrix for network error correction. The
     network design matrix includes rows which relate to those of NaN cells.

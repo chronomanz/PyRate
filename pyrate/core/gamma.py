@@ -17,14 +17,15 @@
 This Python module contains tools for reading GAMMA format input data.
 """
 # coding: utf-8
-from os.path import join, split
+from os.path import split
 import re
 import os
 from datetime import date, time, timedelta
 import numpy as np
-import pyrate.core.ifgconstants as ifc
-from pyrate.core import config as cf
 
+import pyrate.constants
+import pyrate.core.ifgconstants as ifc
+import pyrate.core.shared
 
 # constants
 GAMMA_DATE = 'date'
@@ -221,7 +222,7 @@ def get_header_paths(input_file, slc_file_list, slc_dir):
     _, file_name = split(input_file)
     PTN = re.compile(r'\d{8}')  # match 8 digits for the dates
     epochs = PTN.findall(file_name)
-    header_names = cf.parse_namelist(slc_file_list)
+    header_names = pyrate.core.shared.parse_namelist(slc_file_list)
     matches = [hdr for hdr in header_names if any(e in hdr for e in epochs)]
     return [os.path.join(slc_dir, hdr) for hdr in matches]
 
@@ -237,10 +238,10 @@ def gamma_header(ifg_file_path, params):
         A combined header dictionary containing metadata from matching
         gamma headers and DEM header.   
     """
-    dem_hdr_path = params[cf.DEM_HEADER_FILE]
-    slc_dir = params[cf.SLC_DIR]
-    header_paths = get_header_paths(ifg_file_path, 
-                                    params[cf.SLC_FILE_LIST], 
+    dem_hdr_path = params[pyrate.constants.DEM_HEADER_FILE]
+    slc_dir = params[pyrate.constants.SLC_DIR]
+    header_paths = get_header_paths(ifg_file_path,
+                                    params[pyrate.constants.SLC_FILE_LIST],
                                     slc_dir=slc_dir)
     combined_headers = manage_headers(dem_hdr_path, header_paths)
 

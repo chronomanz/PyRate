@@ -166,7 +166,7 @@ def get_ifg_paths(params):
         for i, dest_path in enumerate(dest_paths):
             dest_paths[i] = dest_path.replace("_tif", "")
     else:
-        dest_paths = get_dest_paths(base_unw_paths, crop, params, xlks)
+        dest_paths = get_dest_paths(base_unw_paths, params["IFG_CROP_OPT"], params, params["IFG_LKSX"])
 
     return base_unw_paths, dest_paths
 

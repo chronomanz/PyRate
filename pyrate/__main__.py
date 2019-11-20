@@ -21,10 +21,7 @@ import logging
 import argparse
 from argparse import RawTextHelpFormatter
 from pyrate import conv2tif, prepifg, process, merge, configuration as cf
-from pyrate.core import pyratelog
 import time
-
-log = logging.getLogger(__name__)
 
 
 def conv2tif_handler(config_file):
@@ -79,9 +76,10 @@ more details.
 def main():
     start_time = time.time()
     log.debug("Starting PyRate")
+    log.info("Starting PyRate")
 
     parser = argparse.ArgumentParser(prog='pyrate', description=CLI_DESCRIPTION, add_help=True, formatter_class=RawTextHelpFormatter)
-    parser.add_argument('-v', '--verbosity', type=str, default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="Increase output verbosity")
+    parser.add_argument('-v', '--verbosity', type=str, default='DEBUG', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'], help="Increase output verbosity")
 
     subparsers = parser.add_subparsers(dest='command')
     subparsers.required = True
@@ -107,8 +105,8 @@ def main():
     log.debug(args)
 
     if args.verbosity:
-        pyratelog.configure(args.verbosity)
         log.info("Verbosity set to " + str(args.verbosity) + ".")
+        log.setLevel(args.verbosity)
 
     if args.command == "conv2tif":
         conv2tif_handler(args.config_file)
@@ -126,4 +124,12 @@ def main():
 
 
 if __name__ == "__main__":
+
+    # create default logger
+    log = logging.getLogger("rootLogger")
+    stream = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    stream.setFormatter(formatter)
+    log.addHandler(stream)
+
     main()

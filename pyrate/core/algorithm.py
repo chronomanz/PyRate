@@ -22,7 +22,7 @@ from scipy.linalg import qr, solve, lstsq
 from pyrate.core.shared import EpochList, IfgException, PrereadIfg
 from pyrate.core.ifgconstants import DAYS_PER_YEAR
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 
 def is_square(arr):
@@ -52,8 +52,6 @@ def least_squares_covariance(A, b, v):
     :return: solution
     :rtype: ndarray
     """
-
-    # pylint: disable=too-many-locals
     # X = LSCOV(A,b,V) returns the vector X that minimizes
     # (A*X-b)'*inv(V)*(A*X-b) for the case in which length(b) > length(X).
     # This is the over-determined least squares problem with covariance V.
@@ -156,39 +154,7 @@ def ifg_date_lookup(ifgs, date_pair):
         if date_pair == (i.master, i.slave):
             return i
 
-    raise ValueError("Cannot find Ifg with "
-                     "master/slave of %s" % str(date_pair))
-
-
-def ifg_date_index_lookup(ifgs, date_pair):
-    """
-    Returns the Interferogram index which has the master and slave dates
-    given in 'date_pair'.
-
-    :param list ifgs: List of interferogram objects to search
-    :param tuple date_pair: A (datetime.date, datetime.date)
-
-    :return: interferogram index
-    :rtype: int
-    """
-
-    if len(date_pair) != 2:
-        msg = "Need (datetime.date, datetime.date) master/slave pair"
-        raise IfgException(msg)
-
-    # check master/slave dates are in order
-    try:
-        if date_pair[0] > date_pair[1]:
-            date_pair = date_pair[1], date_pair[0]
-    except:
-        raise ValueError("Bad date_pair arg to ifg_date_lookup()")
-
-    for i, _ in enumerate(ifgs):
-        if date_pair == (ifgs[i].master, ifgs[i].slave):
-            return i
-
-    raise ValueError("Cannot find Ifg with "
-                     "master/slave of %s" % str(date_pair))
+    raise ValueError("Cannot find Ifg with master/slave of %s" % str(date_pair))
 
 
 def get_epochs(ifgs):
@@ -209,8 +175,7 @@ def get_epochs(ifgs):
     log.info('Found {} unique epochs in the {} interferogram network'.format(len(dates), len(ifgs)))
 
     # absolute span for each date from the zero/start point
-    span = [(dates[i] - dates[0]).days / DAYS_PER_YEAR
-            for i in range(len(dates))]
+    span = [(dates[i] - dates[0]).days / DAYS_PER_YEAR for i in range(len(dates))]
     return EpochList(dates, repeat, span), n
 
 

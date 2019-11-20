@@ -21,16 +21,15 @@ import os
 from os.path import join
 import logging
 from itertools import product
-from pyrate.core.shared import joblib_log_level
+import pyrate.constants
 
 import numpy as np
 from numpy import isnan, std, mean, sum as nsum
-from joblib import Parallel, delayed
 
-import pyrate.core.config as cf
+import pyrate.configuration as cf
 from pyrate.core.shared import Ifg
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 
 # TODO: move error checking to config step (for fail fast)
@@ -52,20 +51,16 @@ def ref_pixel(ifgs, params):
     :rtype: tuple
     """
     half_patch_size, thresh, grid = ref_pixel_setup(ifgs, params)
-    parallel = params[cf.PARALLEL]
+    parallel = params[pyrate.constants.PARALLEL]
     if parallel:
         phase_data = [i.phase_data for i in ifgs]
-        mean_sds = Parallel(n_jobs=params[cf.PROCESSES], 
-                            verbose=joblib_log_level(cf.LOG_LEVEL))(
-            delayed(_ref_pixel_multi)(g, half_patch_size, phase_data,
-                                     thresh, params) for g in grid)
+        mean_sds = [_ref_pixel_multi(g, half_patch_size, phase_data, thresh, params) for g in grid]
         refy, refx = find_min_mean(mean_sds, grid)
     else:
         phase_data = [i.phase_data for i in ifgs]
         mean_sds = []
         for g in grid:
-            mean_sds.append(_ref_pixel_multi(
-                g, half_patch_size, phase_data, thresh, params))
+            mean_sds.append(_ref_pixel_multi(g, half_patch_size, phase_data, thresh, params))
         refy, refx = find_min_mean(mean_sds, grid)
 
     if refy and refx:
@@ -106,10 +101,7 @@ def ref_pixel_setup(ifgs_or_paths, params):
     :rtype: list
     """
     log.debug('Setting up ref pixel computation')
-    refnx, refny, chipsize, min_frac = params[cf.REFNX], \
-                                       params[cf.REFNY], \
-                                       params[cf.REF_CHIP_SIZE], \
-                                       params[cf.REF_MIN_FRAC]
+    refnx, refny, chipsize, min_frac = params[pyrate.constants.REFNX], params[pyrate.constants.REFNY], params[pyrate.constants.REF_CHIP_SIZE], params[pyrate.constants.REF_MIN_FRAC]
     if len(ifgs_or_paths) < 1:
         msg = 'Reference pixel search requires 2+ interferograms'
         raise RefPixelError(msg)
@@ -149,19 +141,18 @@ def save_ref_pixel_blocks(grid, half_patch_size, ifg_paths, params):
     :return: None, file saved to disk
     """
     log.debug('Saving ref pixel blocks')
-    outdir = params[cf.TMPDIR]
+    outdir = params[pyrate.constants.TMPDIR]
     for pth in ifg_paths:
         ifg = Ifg(pth)
         ifg.open(readonly=True)
-        ifg.nodata_value = params[cf.NO_DATA_VALUE]
+        ifg.nodata_value = params[pyrate.constants.NO_DATA_VALUE]
         ifg.convert_to_nans()
         ifg.convert_to_mm()
         for y, x in grid:
             data = ifg.phase_data[y - half_patch_size:y + half_patch_size + 1,
                                   x - half_patch_size:x + half_patch_size + 1]
 
-            data_file = join(outdir, 'ref_phase_data_{b}_{y}_{x}.npy'.format(
-                    b=os.path.basename(pth).split('.')[0], y=y, x=x))
+            data_file = join(outdir, 'ref_phase_data_{b}_{y}_{x}.npy'.format(b=os.path.basename(pth).split('.')[0], y=y, x=x))
             np.save(file=data_file, arr=data)
         ifg.close()
     log.debug('Saved ref pixel blocks')
@@ -174,34 +165,26 @@ def _ref_pixel_mpi(process_grid, half_patch_size, ifgs, thresh, params):
     log.debug('Ref pixel calculation started')
     mean_sds = []
     for g in process_grid:
-        mean_sds.append(_ref_pixel_multi(g, half_patch_size, ifgs, thresh,
-                                        params))
+        mean_sds.append(_ref_pixel_multi(g, half_patch_size, ifgs, thresh, params))
     return mean_sds
 
 
-def _ref_pixel_multi(g, half_patch_size, phase_data_or_ifg_paths,
-                    thresh, params):
+def _ref_pixel_multi(g, half_patch_size, phase_data_or_ifg_paths, thresh, params):
     """
     Convenience function for ref pixel optimisation
     """
-    # pylint: disable=invalid-name
     # phase_data_or_ifg is list of ifgs
     y, x, = g
     if isinstance(phase_data_or_ifg_paths[0], str):
         # this consumes a lot less memory
         # one ifg.phase_data in memory at any time
         data = []
-        output_dir = params[cf.TMPDIR]
+        output_dir = params[pyrate.constants.TMPDIR]
         for p in phase_data_or_ifg_paths:
-            data_file = os.path.join(output_dir,
-                                     'ref_phase_data_{b}_{y}_{x}.npy'.format(
-                                         b=os.path.basename(p).split('.')[0],
-                                         y=y, x=x))
+            data_file = os.path.join(output_dir,'ref_phase_data_{b}_{y}_{x}.npy'.format(b=os.path.basename(p).split('.')[0], y=y, x=x))
             data.append(np.load(file=data_file))
     else:  # phase_data_or_ifg is phase_data list
-        data = [p[y - half_patch_size:y + half_patch_size + 1,
-                  x - half_patch_size:x + half_patch_size + 1]
-                for p in phase_data_or_ifg_paths]
+        data = [p[y - half_patch_size:y + half_patch_size + 1, x - half_patch_size:x + half_patch_size + 1] for p in phase_data_or_ifg_paths]
     valid = [nsum(~isnan(d)) > thresh for d in data]
     if all(valid):  # ignore if 1+ ifgs have too many incoherent cells
         sd = [std(i[~isnan(i)]) for i in data]
@@ -281,6 +264,6 @@ def _validate_search_win(refnx, refny, chipsize, head):
 
 
 class RefPixelError(Exception):
-    '''
+    """
     Generic exception for reference pixel errors.
-    '''
+    """

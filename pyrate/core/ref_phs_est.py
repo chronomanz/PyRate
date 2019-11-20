@@ -18,18 +18,13 @@
 This Python module implements a reference phase estimation algorithm.
 """
 import logging
-import os
-
-from joblib import Parallel, delayed
 import numpy as np
+import pyrate.constants
+from pyrate.core import ifgconstants as ifc
+from pyrate.core.shared import  nanmedian, Ifg
+log = logging.getLogger("rootLogger")
 
-from pyrate.core import ifgconstants as ifc, config as cf
-from pyrate.core.shared import joblib_log_level, nanmedian, Ifg
-from pyrate.core import mpiops
 
-log = logging.getLogger(__name__)
-
-MASTER_PROCESS = 0
 
 def est_ref_phase_method2(ifg_paths, params, refpx, refpy):
     """
@@ -45,9 +40,9 @@ def est_ref_phase_method2(ifg_paths, params, refpx, refpy):
     :rtype: ndarray
     :return: ifgs: Reference phase data is removed interferograms in place
     """
-    half_chip_size = int(np.floor(params[cf.REF_CHIP_SIZE] / 2.0))
+    half_chip_size = int(np.floor(params[pyrate.constants.REF_CHIP_SIZE] / 2.0))
     chipsize = 2 * half_chip_size + 1
-    thresh = chipsize * chipsize * params[cf.REF_MIN_FRAC]
+    thresh = chipsize * chipsize * params[pyrate.constants.REF_MIN_FRAC]
 
     def _inner(ifg_paths):
         if isinstance(ifg_paths[0], Ifg):
@@ -60,21 +55,15 @@ def est_ref_phase_method2(ifg_paths, params, refpx, refpy):
                 ifg.open(readonly=False)
 
         phase_data = [i.phase_data for i in ifgs]
-        if params[cf.PARALLEL]:
-            ref_phs = Parallel(n_jobs=params[cf.PROCESSES],
-                               verbose=joblib_log_level(cf.LOG_LEVEL))(
-                delayed(_est_ref_phs_method2)(p, half_chip_size,
-                                              refpx, refpy, thresh)
-                for p in phase_data)
+        if params[pyrate.constants.PARALLEL]:
+            ref_phs = [_est_ref_phs_method2(p, half_chip_size,refpx, refpy, thresh)for p in phase_data]
 
             for n, ifg in enumerate(ifgs):
                 ifg.phase_data -= ref_phs[n]
         else:
             ref_phs = np.zeros(len(ifgs))
             for n, ifg in enumerate(ifgs):
-                ref_phs[n] = \
-                    _est_ref_phs_method2(phase_data[n], half_chip_size,
-                                         refpx, refpy, thresh)
+                ref_phs[n] = _est_ref_phs_method2(phase_data[n], half_chip_size, refpx, refpy, thresh)
                 ifg.phase_data -= ref_phs[n]
 
         for ifg in ifgs:
@@ -82,7 +71,7 @@ def est_ref_phase_method2(ifg_paths, params, refpx, refpy):
             ifg.close()
         return ref_phs
     
-    process_ifgs_paths = mpiops.array_split(ifg_paths)
+    process_ifgs_paths = ifg_paths
     ref_phs = _inner(process_ifgs_paths)
     return ref_phs   
 
@@ -132,12 +121,9 @@ def est_ref_phase_method1(ifg_paths, params):
 
         comp = np.isnan(ifg_phase_data_sum)
         comp = np.ravel(comp, order='F')
-        if params[cf.PARALLEL]:
+        if params[pyrate.constants.PARALLEL]:
             log.info("Calculating ref phase using multiprocessing")
-            ref_phs = Parallel(n_jobs=params[cf.PROCESSES], 
-                               verbose=joblib_log_level(cf.LOG_LEVEL))(
-                delayed(_est_ref_phs_method1)(p, comp)
-                for p in phase_data)
+            ref_phs = [_est_ref_phs_method1(p, comp) for p in phase_data]
             for n, ifg in enumerate(proc_ifgs):
                 ifg.phase_data -= ref_phs[n]
         else:
@@ -153,7 +139,7 @@ def est_ref_phase_method1(ifg_paths, params):
 
         return ref_phs
 
-    process_ifg_paths = mpiops.array_split(ifg_paths)
+    process_ifg_paths = ifg_paths
     ref_phs = _inner(process_ifg_paths)
     return ref_phs
 

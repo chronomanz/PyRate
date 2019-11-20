@@ -4,6 +4,8 @@ import numpy as np
 
 __version__ = "0.4.0"
 LOG_LEVEL = 'DEBUG'
+LOGGER_NAME = "ROOT_LOGGER"
+
 SIXTEEN_DIGIT_EPOCH_PAIR = r'\d{8}-\d{8}'
 TWELVE_DIGIT_EPOCH_PAIR = r'\d{6}-\d{6}'
 EIGHT_DIGIT_EPOCH = r'\d{8}'

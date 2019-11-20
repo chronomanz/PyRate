@@ -26,9 +26,7 @@ import itertools
 from scipy.linalg import solve, cholesky, qr, inv
 from numpy import nan, isnan, sqrt, diag, delete, array, float32
 import numpy as np
-from joblib import Parallel, delayed
-from pyrate.core import config as cf
-from pyrate.core.shared import joblib_log_level
+import pyrate.constants
 
 
 def linear_rate(ifgs, params, vcmt, mst=None):
@@ -48,29 +46,20 @@ def linear_rate(ifgs, params, vcmt, mst=None):
     :return: samples: Statistics of observations used in calculation
     :rtype: ndarray
     """
-    maxsig, nsig, pthresh, cols, error, mst, obs, parallel, _, \
-        rate, rows, samples, span = _linrate_setup(ifgs, mst, params)
+    maxsig, nsig, pthresh, cols, error, mst, obs, parallel, _, rate, rows, samples, span = _linrate_setup(ifgs, mst, params)
 
     # pixel-by-pixel calculation.
     # nested loops to loop over the 2 image dimensions
     if parallel == 1:
 
-        res = Parallel(n_jobs=params[cf.PROCESSES], 
-                       verbose=joblib_log_level(cf.LOG_LEVEL))(
-            delayed(_linear_rate_by_rows)(r, cols, mst, nsig, obs,
-                                          pthresh, span, vcmt)
-            for r in range(rows))
+        res = [_linear_rate_by_rows(r, cols, mst, nsig, obs, pthresh, span, vcmt) for r in range(rows)]
         # pylint: disable=redefined-variable-type
         res = np.array(res)
         rate = res[:, :, 0]
         error = res[:, :, 1]
         samples = res[:, :, 2]
     elif parallel == 2:
-        res = Parallel(n_jobs=params[cf.PROCESSES], 
-                       verbose=joblib_log_level(cf.LOG_LEVEL))(
-            delayed(_linear_rate_by_pixel)(r, c, mst, nsig, obs,
-                                           pthresh, span, vcmt)
-            for r, c in itertools.product(range(rows), range(cols)))
+        res = [_linear_rate_by_pixel(r, c, mst, nsig, obs, pthresh, span, vcmt) for r, c in itertools.product(range(rows), range(cols))]
         res = np.array(res)
 
         rate = res[:, 0].reshape(rows, cols)
@@ -79,9 +68,7 @@ def linear_rate(ifgs, params, vcmt, mst=None):
     else:
         for i in range(rows):
             for j in range(cols):
-                rate[i, j], error[i, j], samples[i, j] = \
-                    _linear_rate_by_pixel(i, j, mst, nsig, obs,
-                                          pthresh, span, vcmt)
+                rate[i, j], error[i, j], samples[i, j] = _linear_rate_by_pixel(i, j, mst, nsig, obs, pthresh, span, vcmt)
 
     # overwrite the data whose error is larger than the
     # maximum sigma user threshold
@@ -89,7 +76,7 @@ def linear_rate(ifgs, params, vcmt, mst=None):
     mask[mask] &= error[mask] > maxsig
     rate[mask] = nan
     error[mask] = nan
-    #samples[mask] = nan # should we also mask the samples?
+    # samples[mask] = nan # should we also mask the samples?
 
     return rate, error, samples
 
@@ -99,15 +86,15 @@ def _linrate_setup(ifgs, mst, params):
     Convenience function for linrate setup
     """
     # MULTIPROCESSING parameters
-    parallel = params[cf.PARALLEL]
-    processes = params[cf.PROCESSES]
+    parallel = params[pyrate.constants.PARALLEL]
+    processes = params[pyrate.constants.PROCESSES]
     # linrate parameters from config file
     # n-sigma ratio used to threshold 'model minus observation' residuals
-    nsig = params[cf.LR_NSIG]
+    nsig = params[pyrate.constants.LR_NSIG]
     # Threshold for maximum allowable standard error
-    maxsig = params[cf.LR_MAXSIG]
+    maxsig = params[pyrate.constants.LR_MAXSIG]
     # Pixel threshold; minimum number of coherent observations for a pixel
-    pthresh = params[cf.LR_PTHRESH]
+    pthresh = params[pyrate.constants.LR_PTHRESH]
     rows, cols = ifgs[0].phase_data.shape
     # make 3D block of observations
     obs = array([np.where(isnan(x.phase_data), 0, x.phase_data) for x in ifgs])
@@ -122,8 +109,7 @@ def _linrate_setup(ifgs, mst, params):
     error = np.empty([rows, cols], dtype=float32)
     rate = np.empty([rows, cols], dtype=float32)
     samples = np.empty([rows, cols], dtype=np.float32)
-    return maxsig, nsig, pthresh, cols, error, mst, obs, parallel, processes, \
-           rate, rows, samples, span
+    return maxsig, nsig, pthresh, cols, error, mst, obs, parallel, processes, rate, rows, samples, span
 
 
 def _linear_rate_by_rows(row, cols, mst, nsig, obs, pthresh, span, vcmt):
@@ -131,8 +117,7 @@ def _linear_rate_by_rows(row, cols, mst, nsig, obs, pthresh, span, vcmt):
 
     res = np.empty(shape=(cols, 3), dtype=np.float32)
     for col in range(cols):
-        res[col, :] = _linear_rate_by_pixel(
-            row, col, mst, nsig, obs, pthresh, span, vcmt)
+        res[col, :] = _linear_rate_by_pixel(row, col, mst, nsig, obs, pthresh, span, vcmt)
 
     return res
 

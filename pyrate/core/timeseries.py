@@ -21,16 +21,13 @@ inversion in PyRate.
 # pylint: disable=too-many-arguments
 import itertools
 
-from numpy import (where, isnan, nan, diff, zeros,
-                   float32, cumsum, dot, delete, asarray)
+from numpy import (where, isnan, nan, diff, zeros, float32, cumsum, dot, delete, asarray)
 from numpy.linalg import matrix_rank, pinv, cholesky
 import numpy as np
 from scipy.linalg import qr
-from joblib import Parallel, delayed
-from pyrate.core.shared import joblib_log_level
+import pyrate.constants
 from pyrate.core.algorithm import master_slave_ids, get_epochs
-from pyrate.core import config as cf, mst as mst_module
-from pyrate.core.config import ConfigException
+from pyrate.core import mst as mst_module
 
 
 def _time_series_setup(ifgs, mst, params):
@@ -45,9 +42,9 @@ def _time_series_setup(ifgs, mst, params):
     interp = 0 if mst_module.mst_from_ifgs(ifgs)[1] else 1
 
     # Parallel Processing parameters
-    parallel = params[cf.PARALLEL]
+    parallel = params[pyrate.constants.PARALLEL]
     # Time Series parameters
-    tsmethod = params[cf.TIME_SERIES_METHOD]
+    tsmethod = params[pyrate.constants.TIME_SERIES_METHOD]
 
     pthresh, smfactor, smorder = _validate_params(params, tsmethod)
 
@@ -71,34 +68,32 @@ def _time_series_setup(ifgs, mst, params):
     # change the sign if slave is earlier than master
     isign = where(imaster > islave)
     b0_mat[isign[0], :] = -b0_mat[isign[0], :]
-    tsvel_matrix = np.empty(shape=(nrows, ncols, nvelpar),
-                            dtype=float32)
+    tsvel_matrix = np.empty(shape=(nrows, ncols, nvelpar),dtype=float32)
     ifg_data = np.zeros((nifgs, nrows, ncols), dtype=float32)
     for ifg_num in range(nifgs):
         ifg_data[ifg_num] = ifgs[ifg_num].phase_data
     if mst is None:
         mst = ~isnan(ifg_data)
-    return b0_mat, interp, pthresh, smfactor, smorder, tsmethod, ifg_data, \
-        mst, ncols, nrows, nvelpar, parallel, span, tsvel_matrix
+    return b0_mat, interp, pthresh, smfactor, smorder, tsmethod, ifg_data, mst, ncols, nrows, nvelpar, parallel, span, tsvel_matrix
 
 
 def _validate_params(params, tsmethod):
     """
     Helper function to validate supplied time series parameters
     """
-    if tsmethod == 1 and params[cf.TIME_SERIES_SM_ORDER] is None:
-        _missing_option_error(cf.TIME_SERIES_SM_ORDER)
+    if tsmethod == 1 and params[pyrate.constants.TIME_SERIES_SM_ORDER] is None:
+        _missing_option_error(pyrate.constants.TIME_SERIES_SM_ORDER)
     else:
-        smorder = params[cf.TIME_SERIES_SM_ORDER]
-    if tsmethod == 1 and params[cf.TIME_SERIES_SM_FACTOR] is None:
-        _missing_option_error(cf.TIME_SERIES_SM_FACTOR)
+        smorder = params[pyrate.constants.TIME_SERIES_SM_ORDER]
+    if tsmethod == 1 and params[pyrate.constants.TIME_SERIES_SM_FACTOR] is None:
+        _missing_option_error(pyrate.constants.TIME_SERIES_SM_FACTOR)
     else:
-        smfactor = np.power(10, params[cf.TIME_SERIES_SM_FACTOR])
+        smfactor = np.power(10, params[pyrate.constants.TIME_SERIES_SM_FACTOR])
 
-    if params[cf.TIME_SERIES_PTHRESH] is None:
-        _missing_option_error(cf.TIME_SERIES_PTHRESH)
+    if params[pyrate.constants.TIME_SERIES_PTHRESH] is None:
+        _missing_option_error(pyrate.constants.TIME_SERIES_PTHRESH)
     else:
-        pthresh = params[cf.TIME_SERIES_PTHRESH]
+        pthresh = params[pyrate.constants.TIME_SERIES_PTHRESH]
         if pthresh < 0.0 or pthresh > 1000:
             raise ValueError(
                 "minimum number of coherent observations for a pixel"
@@ -134,33 +129,18 @@ def time_series(ifgs, params, vcmt=None, mst=None):
     :rtype: tuple
     """
 
-    b0_mat, interp, p_thresh, sm_factor, sm_order, ts_method, ifg_data, mst, \
-        ncols, nrows, nvelpar, parallel, span, tsvel_matrix = \
-        _time_series_setup(ifgs, mst, params)
+    b0_mat, interp, p_thresh, sm_factor, sm_order, ts_method, ifg_data, mst, ncols, nrows, nvelpar, parallel, span, tsvel_matrix = _time_series_setup(ifgs, mst, params)
 
     if parallel == 1:
-        tsvel_matrix = Parallel(n_jobs=params[cf.PROCESSES], 
-                                verbose=joblib_log_level(cf.LOG_LEVEL))(
-            delayed(_time_series_by_rows)(r, b0_mat, sm_factor, sm_order,
-                                          ifg_data, mst, ncols, nvelpar,
-                                          p_thresh, vcmt, ts_method, interp)
-            for r in range(nrows))
+        tsvel_matrix = [_time_series_by_rows(r, b0_mat, sm_factor, sm_order, ifg_data, mst, ncols, nvelpar, p_thresh, vcmt, ts_method, interp) for r in range(nrows)]
 
     elif parallel == 2:
-
-        res = np.array(Parallel(n_jobs=params[cf.PROCESSES], 
-                                verbose=joblib_log_level(cf.LOG_LEVEL))(
-            delayed(_time_series_by_pixel)(i, j, b0_mat, sm_factor, sm_order,
-                                           ifg_data, mst, nvelpar, p_thresh,
-                                           interp, vcmt, ts_method)
-            for (i, j) in itertools.product(range(nrows), range(ncols))))
+        res = np.array([_time_series_by_pixel(i, j, b0_mat, sm_factor, sm_order, ifg_data, mst, nvelpar, p_thresh, interp, vcmt, ts_method) for (i, j) in itertools.product(range(nrows), range(ncols))])
         tsvel_matrix = np.reshape(res, newshape=(nrows, ncols, res.shape[1]))
     else:
         for row in range(nrows):
             for col in range(ncols):
-                tsvel_matrix[row, col] = _time_series_by_pixel(
-                    row, col, b0_mat, sm_factor, sm_order, ifg_data, mst,
-                    nvelpar, p_thresh, interp, vcmt, ts_method)
+                tsvel_matrix[row, col] = _time_series_by_pixel(row, col, b0_mat, sm_factor, sm_order, ifg_data, mst, nvelpar, p_thresh, interp, vcmt, ts_method)
 
     tsvel_matrix = where(tsvel_matrix == 0, nan, tsvel_matrix)
     # SB: do the span multiplication as a numpy linalg operation, MUCH faster
@@ -173,16 +153,13 @@ def time_series(ifgs, params, vcmt=None, mst=None):
     return tsincr, tscum, tsvel_matrix
 
 
-def _time_series_by_rows(row, b0_mat, sm_factor, sm_order, ifg_data, mst, ncols,
-                         nvelpar, p_thresh, vcmt, ts_method, interp):
+def _time_series_by_rows(row, b0_mat, sm_factor, sm_order, ifg_data, mst, ncols, nvelpar, p_thresh, vcmt, ts_method, interp):
     """
     Wrapper function for splitting time series computation by rows.
     """
     tsvel = np.empty(shape=(ncols, nvelpar), dtype=float32)
     for col in range(ncols):
-        tsvel[col, :] = _time_series_by_pixel(
-            row, col, b0_mat, sm_factor, sm_order, ifg_data, mst, nvelpar,
-            p_thresh, interp, vcmt, ts_method)
+        tsvel[col, :] = _time_series_by_pixel(row, col, b0_mat, sm_factor, sm_order, ifg_data, mst, nvelpar, p_thresh, interp, vcmt, ts_method)
 
     return tsvel
 
@@ -200,8 +177,7 @@ def _remove_rank_def_rows(b_mat, nvelpar, ifgv, sel):
     return b_mat, ifgv, sel, rmrow
 
 
-def _time_series_by_pixel(row, col, b0_mat, sm_factor, sm_order, ifg_data, mst,
-                          nvelpar, p_thresh, interp, vcmt, method):
+def _time_series_by_pixel(row, col, b0_mat, sm_factor, sm_order, ifg_data, mst, nvelpar, p_thresh, interp, vcmt, method):
     """
     Wrapper function for splitting time series computation by pixels.
     """
@@ -218,8 +194,7 @@ def _time_series_by_pixel(row, col, b0_mat, sm_factor, sm_order, ifg_data, mst,
             while len(rmrow) > 0:
                 # if b_mat.shape[0] <=1 then we return nans
                 if b_mat.shape[0] > 1:
-                    b_mat, ifgv, sel, rmrow = _remove_rank_def_rows(
-                        b_mat, nvelpar, ifgv, sel)
+                    b_mat, ifgv, sel, rmrow = _remove_rank_def_rows(b_mat, nvelpar, ifgv, sel)
                 else:
                     return np.empty(nvelpar) * np.nan
 
@@ -231,8 +206,7 @@ def _time_series_by_pixel(row, col, b0_mat, sm_factor, sm_order, ifg_data, mst,
             velflag = np.ones(nvelpar)
         if method == 1:
             # Use Laplacian smoothing method
-            tsvel = _solve_ts_lap(nvelpar, velflag, ifgv, b_mat,
-                                  sm_order, sm_factor, sel, vcmt)
+            tsvel = _solve_ts_lap(nvelpar, velflag, ifgv, b_mat,sm_order, sm_factor, sel, vcmt)
         elif method == 2:
             # Use SVD method
             tsvel = _solve_ts_svd(nvelpar, velflag, ifgv, b_mat)
@@ -325,7 +299,7 @@ def _missing_option_error(option):
     Convenience function for raising similar missing option errors.
     """
     msg = "Missing '%s' option in config file" % option
-    raise ConfigException(msg)
+    raise Exception(msg)
 
 
 class TimeSeriesError(Exception):

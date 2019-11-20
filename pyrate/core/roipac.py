@@ -19,8 +19,9 @@ This Python module contains tools for reading ROI_PAC format input data.
 import os
 import re
 import datetime
+
+import pyrate.constants
 import pyrate.core.ifgconstants as ifc
-from pyrate.core import config as cf
 
 # ROIPAC RSC header file constants
 WIDTH = "WIDTH"
@@ -204,14 +205,14 @@ def roipac_header(file_path, params):
     Function to obtain a header for roipac interferogram file or converted
     geotiff.
     """
-    rsc_file = os.path.join(params[cf.DEM_HEADER_FILE])
+    rsc_file = os.path.join(params[pyrate.constants.DEM_HEADER_FILE])
     if rsc_file is not None:
         projection = parse_header(rsc_file)[ifc.PYRATE_DATUM]
     else:
         raise RoipacException('No DEM resource/header file is '
                                      'provided')
     if file_path.endswith('_dem.tif'):
-        header_file = os.path.join(params[cf.DEM_HEADER_FILE])
+        header_file = os.path.join(params[pyrate.constants.DEM_HEADER_FILE])
     elif file_path.endswith('_unw.tif'):
         base_file = file_path[:-8]
         header_file = base_file + '.unw.' + ROI_PAC_HEADER_FILE_EXT
