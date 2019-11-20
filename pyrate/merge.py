@@ -35,7 +35,7 @@ from pyrate.core.shared import PrereadIfg
 from pyrate.configuration import TMPDIR
 
 gdal.SetCacheMax(64)
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 
 def create_png_from_tif(output_folder_path):

@@ -35,7 +35,7 @@ import multiprocessing as mp
 from pyrate.core.shared import _data_format, _is_interferogram, ROIPAC, _check_raw_data, _check_pixel_res_mismatch, \
     GeotiffException, _is_incidence, collate_metadata, gdal_dataset
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 
 def main(params):

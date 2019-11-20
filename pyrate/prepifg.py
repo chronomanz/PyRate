@@ -37,7 +37,7 @@ import multiprocessing as mp
 
 from pyrate.core.shared import output_tiff_filename, Ifg, DEM
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 
 def main(params=None):
