@@ -29,10 +29,10 @@ import pyrate.configuration
 import pyrate.constants
 import pyrate.configuration
 import pyrate.core.shared
-import pyrate.process
 from pyrate.core import shared, ifgconstants as ifc
 from pyrate.core.shared import PrereadIfg
 from pyrate.configuration import TMPDIR
+from pyrate.core.shared import Ifg
 
 gdal.SetCacheMax(64)
 log = logging.getLogger("rootLogger")
@@ -257,3 +257,49 @@ def _assemble_tiles(i, n, tile, tsincr_g, output_dir, outtype):
     tsincr_file = os.path.join(output_dir, '{}_{}.npy'.format(outtype, n))
     tsincr = np.load(file=tsincr_file)
     tsincr_g[tile.top_left_y:tile.bottom_right_y, tile.top_left_x:tile.bottom_right_x] = tsincr[:, :, i]
+
+def get_tiles(ifg_path, rows, cols):
+    """
+    Break up the interferograms into smaller tiles based on user supplied
+    rows and columns.
+
+    :param list ifg_path: List of destination geotiff file names
+    :param int rows: Number of rows to break each interferogram into
+    :param int cols: Number of columns to break each interferogram into
+
+    :return: tiles: List of shared.Tile instances
+    :rtype: list
+    """
+    ifg = Ifg(ifg_path)
+    ifg.open(readonly=True)
+    tiles = create_tiles(ifg.shape, nrows=rows, ncols=cols)
+    ifg.close()
+    return tiles
+
+def create_tiles(shape, nrows=2, ncols=2):
+    """
+    Return a list of tiles containing nrows x ncols with each tile preserving
+    the physical layout of original array. The number of rows can be changed
+    (increased) such that the resulting tiles with float32's do not exceed
+    500MB in memory. When the array shape (rows, columns) are not divisible
+    by (nrows, ncols) then some of the array dimensions can change according
+    to numpy.array_split.
+
+    :param tuple shape: Shape tuple (2-element) of interferogram.
+    :param int nrows: Number of rows of tiles
+    :param int ncols: Number of columns of tiles
+
+    :return: List of Tile class instances.
+    :rtype: list
+    """
+
+    if len(shape) != 2:
+        raise ValueError('shape must be a length 2 tuple')
+
+    no_y, no_x = shape
+
+    if ncols > no_x or nrows > no_y:
+        raise ValueError('nrows/cols must be greater than ifg dimensions')
+    col_arr = np.array_split(range(no_x), ncols)
+    row_arr = np.array_split(range(no_y), nrows)
+    return

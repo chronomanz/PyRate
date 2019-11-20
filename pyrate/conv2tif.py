@@ -29,7 +29,7 @@ import pyrate.constants
 import pyrate.core.shared
 from pyrate.constants import GAMMA, ROIPAC
 from pyrate.core.prepifg_helper import PreprocessError
-from pyrate.core import shared, mpiops, gamma, roipac, ifgconstants as ifc
+from pyrate.core import shared, gamma, roipac, ifgconstants as ifc
 import multiprocessing as mp
 
 from pyrate.core.shared import _data_format, _is_interferogram, ROIPAC, _check_raw_data, _check_pixel_res_mismatch, \
@@ -60,14 +60,12 @@ def main(params):
     pool = mp.Pool(mp.cpu_count())
 
     # Running pools
-    destination_paths = pool.map(_geotiff_multiprocessing, [(ifg_path, params) for ifg_path in base_ifg_paths])
+    pool.map(_geotiff_multiprocessing, [(ifg_path, params) for ifg_path in base_ifg_paths])
 
     # Closing pools
     pool.close()
 
     log.info("Finished conv2tif")
-    return destination_paths
-
 
 
 def _geotiff_multiprocessing(parameters):
@@ -93,10 +91,8 @@ def _geotiff_multiprocessing(parameters):
         else:
             raise PreprocessError('Processor must be ROI_PAC (0) or GAMMA (1)')
         write_fullres_geotiff(header, unw_path, dest, nodata=params[pyrate.constants.NO_DATA_VALUE])
-        return dest
     else:
         log.info("Full-res geotiff already exists")
-        return None
 
 
 def write_fullres_geotiff(header, data_path, dest, nodata):

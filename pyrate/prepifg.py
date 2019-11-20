@@ -30,7 +30,7 @@ import pyrate.constants
 import pyrate.conv2tif
 import pyrate.core
 import pyrate.core.shared
-from pyrate.core import shared, mpiops, prepifg_helper, gamma, roipac, ifgconstants as ifc
+from pyrate.core import shared, prepifg_helper, gamma, roipac, ifgconstants as ifc
 from pyrate.core.gdal_python import _gdalwarp_width_and_height, _get_resampled_data_size
 from pyrate.constants import GAMMA, ROIPAC, LOW_FLOAT32, ALREADY_SAME_SIZE
 import multiprocessing as mp
