@@ -106,7 +106,7 @@ IFMS16 = ['geo_060619-061002_unw.tif',
         'geo_070430-070604_unw.tif',
         'geo_070604-070709_unw.tif']
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("rootLogger")
 
 def remove_tifs(path):
     tifs = glob.glob(os.path.join(path, '*.tif'))
